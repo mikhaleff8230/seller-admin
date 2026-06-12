@@ -10,7 +10,7 @@ type EditorNavigationProps = {
   steps: Step[];
   currentStep: number;
   onStepClick: (step: number) => void;
-  productId?: string; // ID товара, если товар сохранен
+  productId?: string | number; // ID товара, если товар сохранен
 };
 
 export default function EditorNavigation({
@@ -151,4 +151,3 @@ export default function EditorNavigation({
     </>
   );
 }
-

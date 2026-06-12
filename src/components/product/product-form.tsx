@@ -24,7 +24,7 @@ import ProductAttributesForm from './product-attributes-form';
 import ProductDimensionsForm from './product-dimensions-form';
 import { Config } from '@/config';
 import Alert from '@/components/ui/alert';
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import ProductAuthorInput from './product-author-input';
 import ProductManufacturerInput from './product-manufacturer-input';
 import { EditIcon } from '@/components/icons/edit';

@@ -18,7 +18,7 @@ type EditorActionsProps = {
   onPrev: () => void;
   onSave: (publish: boolean) => void;
   isLoading: boolean;
-  productId?: string;
+  productId?: string | number;
 };
 
 export default function EditorActions({
@@ -238,4 +238,3 @@ export default function EditorActions({
     </div>
   );
 }
-

@@ -37,6 +37,7 @@ const STEPS = [
   'media',        // Фото/Видео
   'attributes',   // Характеристики
   'pricing',      // Цена и наличие
+  'course',
   'preview',      // Предпросмотр
 ];
 
