@@ -5,7 +5,6 @@ import ProductAiServices from '@/components/product/product-ai-services';
 import { useProductEditorStore } from '@/store/useProductEditorStore';
 import { useFormContext } from 'react-hook-form';
 import { ProductEditorFormData } from '@/schemas/product-editor.schema';
-import './wb-editor.css';
 
 type ProductEditorShellProps = {
   children: ReactNode;
