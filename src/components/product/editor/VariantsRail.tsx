@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useFormContext } from 'react-hook-form';
 import { useRouter } from 'next/router';
 import { toast } from 'react-toastify';
@@ -176,6 +177,123 @@ export default function VariantsRail() {
     setIsPickerOpen(false);
   };
 
+  const pickerModal =
+    isPickerOpen && typeof document !== 'undefined'
+      ? createPortal(
+          <div
+            className="fixed inset-0 z-[2147483647] flex items-center justify-center bg-black/45 p-4"
+            onClick={() => setIsPickerOpen(false)}
+          >
+            <div
+              className="flex h-[82vh] w-full max-w-3xl flex-col rounded-xl bg-white p-6 shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="mb-4 flex shrink-0 items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-bold text-heading">Добавить товар в варианты</h3>
+                  <p className="mt-1 text-sm text-body">
+                    Выберите свои товары, которые нужно связать с текущей карточкой как варианты.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-full px-3 py-1 text-xl leading-none text-gray-500 hover:bg-gray-100"
+                  onClick={() => setIsPickerOpen(false)}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="shrink-0">
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Поиск по названию товара"
+                  className="mb-4 h-11 w-full rounded-lg border border-gray-200 px-4 text-sm outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-gray-100">
+                {loading ? (
+                  <div className="p-4 text-sm text-body">Загружаем товары...</div>
+                ) : products.length === 0 ? (
+                  <div className="p-4 text-sm text-body">Товары не найдены</div>
+                ) : (
+                  products.map((candidate: any) => {
+                    const isCurrent =
+                      String(candidate.id) === String(product?.id) ||
+                      (!!candidate.slug && candidate.slug === currentSlug);
+                    const alreadyInGroup = items.some(
+                      (item) => String(item.id) === String(candidate.id)
+                    );
+                    const disabled = isCurrent || alreadyInGroup;
+                    const checked = selectedIds.some(
+                      (id) => String(id) === String(candidate.id)
+                    );
+                    const src = getImageSrc(candidate.image);
+
+                    return (
+                      <label
+                        key={candidate.id}
+                        className={`flex items-center gap-3 border-b border-gray-100 p-3 last:border-b-0 ${
+                          disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-gray-50'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={disabled}
+                          onChange={() => toggleProduct(candidate.id)}
+                        />
+                        {src ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={src}
+                            alt=""
+                            className="h-12 w-12 rounded-md object-cover"
+                          />
+                        ) : (
+                          <div className="h-12 w-12 rounded-md bg-gray-100" />
+                        )}
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium text-heading">
+                            {candidate.name}
+                          </span>
+                          <span className="text-xs text-body">
+                            ID: {candidate.id}
+                            {candidate.price != null ? ` · ${candidate.price} ₽` : ''}
+                            {alreadyInGroup ? ' · уже в вариантах' : ''}
+                            {isCurrent ? ' · текущий товар' : ''}
+                          </span>
+                        </span>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="mt-5 flex shrink-0 justify-end gap-3">
+                <button
+                  type="button"
+                  className="wb-btn wb-btn-ghost"
+                  onClick={() => setIsPickerOpen(false)}
+                >
+                  Отмена
+                </button>
+                <button
+                  type="button"
+                  className="wb-btn wb-btn-dark"
+                  onClick={addSelectedProducts}
+                >
+                  Добавить{selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
+
   return (
     <aside className="wb-editor-left wb-sticky wb-card">
       <div className="mb-3 flex items-center justify-between">
@@ -224,118 +342,7 @@ export default function VariantsRail() {
         </button>
       </div>
 
-      {isPickerOpen && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/45 p-4"
-          onClick={() => setIsPickerOpen(false)}
-        >
-          <div
-            className="flex h-[82vh] w-full max-w-3xl flex-col rounded-xl bg-white p-6 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="mb-4 flex shrink-0 items-start justify-between gap-4">
-              <div>
-                <h3 className="text-lg font-bold text-heading">Добавить товар в варианты</h3>
-                <p className="mt-1 text-sm text-body">
-                  Выберите свои товары, которые нужно связать с текущей карточкой как варианты.
-                </p>
-              </div>
-              <button
-                type="button"
-                className="rounded-full px-3 py-1 text-xl leading-none text-gray-500 hover:bg-gray-100"
-                onClick={() => setIsPickerOpen(false)}
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="shrink-0">
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Поиск по названию товара"
-                className="mb-4 h-11 w-full rounded-lg border border-gray-200 px-4 text-sm outline-none focus:border-blue-500"
-              />
-            </div>
-
-            <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-gray-100">
-              {loading ? (
-                <div className="p-4 text-sm text-body">Загружаем товары...</div>
-              ) : products.length === 0 ? (
-                <div className="p-4 text-sm text-body">Товары не найдены</div>
-              ) : (
-                products.map((candidate: any) => {
-                  const isCurrent =
-                    String(candidate.id) === String(product?.id) ||
-                    (!!candidate.slug && candidate.slug === currentSlug);
-                  const alreadyInGroup = items.some(
-                    (item) => String(item.id) === String(candidate.id)
-                  );
-                  const disabled = isCurrent || alreadyInGroup;
-                  const checked = selectedIds.some(
-                    (id) => String(id) === String(candidate.id)
-                  );
-                  const src = getImageSrc(candidate.image);
-
-                  return (
-                    <label
-                      key={candidate.id}
-                      className={`flex items-center gap-3 border-b border-gray-100 p-3 last:border-b-0 ${
-                        disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-gray-50'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        disabled={disabled}
-                        onChange={() => toggleProduct(candidate.id)}
-                      />
-                      {src ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={src}
-                          alt=""
-                          className="h-12 w-12 rounded-md object-cover"
-                        />
-                      ) : (
-                        <div className="h-12 w-12 rounded-md bg-gray-100" />
-                      )}
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-heading">
-                          {candidate.name}
-                        </span>
-                        <span className="text-xs text-body">
-                          ID: {candidate.id}
-                          {candidate.price != null ? ` · ${candidate.price} ₽` : ''}
-                          {alreadyInGroup ? ' · уже в вариантах' : ''}
-                          {isCurrent ? ' · текущий товар' : ''}
-                        </span>
-                      </span>
-                    </label>
-                  );
-                })
-              )}
-            </div>
-
-            <div className="mt-5 flex shrink-0 justify-end gap-3">
-              <button
-                type="button"
-                className="wb-btn wb-btn-ghost"
-                onClick={() => setIsPickerOpen(false)}
-              >
-                Отмена
-              </button>
-              <button
-                type="button"
-                className="wb-btn wb-btn-dark"
-                onClick={addSelectedProducts}
-              >
-                Добавить{selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {pickerModal}
     </aside>
   );
 }
