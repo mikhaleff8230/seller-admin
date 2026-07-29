@@ -8,7 +8,6 @@ import { Product } from '@/types';
 import StepGeneral from './steps/StepGeneral';
 import StepAttributes from './steps/StepAttributes';
 import StepPricing from './steps/StepPricing';
-import StepCourse from './steps/StepCourse';
 import EditorActions from './EditorActions';
 import ProductEditorShell from './ProductEditorShell';
 import { useRouter } from 'next/router';
@@ -25,6 +24,8 @@ type ProductEditorProps = {
   initialProduct?: Product | null;
   productId?: string | number;
 };
+
+const DIGITAL_DELIVERY_ENABLED = false;
 
 export default function ProductEditor({ initialProduct, productId }: ProductEditorProps) {
   const { t } = useTranslation();
@@ -485,57 +486,59 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
           validationErrors.push('Количество');
         }
 
-        const dType = String(normalizedData.digital_product_type || 'file');
+        if (DIGITAL_DELIVERY_ENABLED) {
+          const dType = String(normalizedData.digital_product_type || 'file');
 
-        if (dType === 'file') {
-          if (normalizedData.is_external) {
-            if (!normalizedData.external_product_url || !String(normalizedData.external_product_url).trim()) {
-              validationErrors.push('Внешний URL цифрового товара');
+          if (dType === 'file') {
+            if (normalizedData.is_external) {
+              if (!normalizedData.external_product_url || !String(normalizedData.external_product_url).trim()) {
+                validationErrors.push('Внешний URL цифрового товара');
+              }
+            } else if (!normalizedData.digital_file_input?.id) {
+              validationErrors.push('Архив цифрового товара');
             }
-          } else if (!normalizedData.digital_file_input?.id) {
-            validationErrors.push('Архив цифрового товара');
-          }
-        } else if (dType === 'prompt') {
-          if (!String((data as any).prompt_text || '').trim()) {
-            validationErrors.push('Текст промпта');
-          }
-        } else if (dType === 'link') {
-          if (!String((data as any).external_url || '').trim()) {
-            validationErrors.push('URL для доступа по ссылке (external_url)');
-          }
-        } else if (dType === 'account') {
-          try {
-            const raw = String((data as any).digital_account_json || '').trim();
-            if (!raw) {
-              validationErrors.push('Данные аккаунта (JSON)');
-            } else {
-              JSON.parse(raw);
+          } else if (dType === 'prompt') {
+            if (!String((data as any).prompt_text || '').trim()) {
+              validationErrors.push('Текст промпта');
             }
-          } catch {
-            validationErrors.push('Данные аккаунта (некорректный JSON)');
-          }
-        } else if (dType === 'key') {
-          if (!String((data as any).digital_license_keys || '').trim()) {
-            validationErrors.push('Укажите ключи (по одному в строке)');
-          }
-        } else if (dType === 'subscription') {
-          const sd = (data as any).subscription_days;
-          const dd = (data as any).duration_days;
-          const hasPeriod =
-            (dd != null && dd !== '' && Number(dd) >= 1) ||
-            (sd != null && sd !== '' && Number(sd) >= 1);
-          if (!hasPeriod) {
-            validationErrors.push(
-              'Срок доступа: укажите «Период доступа, дней» на шаге курса или «Срок подписки» на шаге цены (минимум 1 день)'
+          } else if (dType === 'link') {
+            if (!String((data as any).external_url || '').trim()) {
+              validationErrors.push('URL для доступа по ссылке (external_url)');
+            }
+          } else if (dType === 'account') {
+            try {
+              const raw = String((data as any).digital_account_json || '').trim();
+              if (!raw) {
+                validationErrors.push('Данные аккаунта (JSON)');
+              } else {
+                JSON.parse(raw);
+              }
+            } catch {
+              validationErrors.push('Данные аккаунта (некорректный JSON)');
+            }
+          } else if (dType === 'key') {
+            if (!String((data as any).digital_license_keys || '').trim()) {
+              validationErrors.push('Укажите ключи (по одному в строке)');
+            }
+          } else if (dType === 'subscription') {
+            const sd = (data as any).subscription_days;
+            const dd = (data as any).duration_days;
+            const hasPeriod =
+              (dd != null && dd !== '' && Number(dd) >= 1) ||
+              (sd != null && sd !== '' && Number(sd) >= 1);
+            if (!hasPeriod) {
+              validationErrors.push(
+                'Срок доступа: укажите «Период доступа, дней» на шаге курса или «Срок подписки» на шаге цены (минимум 1 день)'
+              );
+            }
+            const rawLessons = (data as any).course?.lessons;
+            const lessonsList = Array.isArray(rawLessons) ? rawLessons : [];
+            const validLessons = lessonsList.filter(
+              (L: any) => L && String(L.title || '').trim().length > 0
             );
-          }
-          const rawLessons = (data as any).course?.lessons;
-          const lessonsList = Array.isArray(rawLessons) ? rawLessons : [];
-          const validLessons = lessonsList.filter(
-            (L: any) => L && String(L.title || '').trim().length > 0
-          );
-          if (validLessons.length < 1) {
-            validationErrors.push('Добавьте хотя бы один урок курса с названием');
+            if (validLessons.length < 1) {
+              validationErrors.push('Добавьте хотя бы один урок курса с названием');
+            }
           }
         }
         
@@ -710,33 +713,37 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
         sale_price: normalizedData.sale_price ?? null,
         quantity: normalizedData.quantity ?? 0,
         sku: normalizedData.sku || '',
-        preview_url: normalizedData.preview_url || '',
-        is_digital: true,
-        digital_product_type: normalizedData.digital_product_type || 'file',
-        prompt_text: (data as any).prompt_text || null,
-        external_url: (data as any).external_url || null,
-        subscription_days:
-          (data as any).subscription_days != null && (data as any).subscription_days !== ''
-            ? Number((data as any).subscription_days)
-            : null,
-        billing_access_type: (data as any).billing_access_type || null,
-        duration_days:
-          (data as any).duration_days != null && (data as any).duration_days !== ''
-            ? Number((data as any).duration_days)
-            : null,
-        digital_license_keys: (data as any).digital_license_keys ?? '',
-        ...(normalizedData.digital_product_type === 'account' && accountDataFromForm
-          ? { account_data: accountDataFromForm }
+        preview_url: DIGITAL_DELIVERY_ENABLED ? normalizedData.preview_url || '' : '',
+        is_digital: DIGITAL_DELIVERY_ENABLED,
+        ...(DIGITAL_DELIVERY_ENABLED
+          ? {
+              digital_product_type: normalizedData.digital_product_type || 'file',
+              prompt_text: (data as any).prompt_text || null,
+              external_url: (data as any).external_url || null,
+              subscription_days:
+                (data as any).subscription_days != null && (data as any).subscription_days !== ''
+                  ? Number((data as any).subscription_days)
+                  : null,
+              billing_access_type: (data as any).billing_access_type || null,
+              duration_days:
+                (data as any).duration_days != null && (data as any).duration_days !== ''
+                  ? Number((data as any).duration_days)
+                  : null,
+              digital_license_keys: (data as any).digital_license_keys ?? '',
+              ...(normalizedData.digital_product_type === 'account' && accountDataFromForm
+                ? { account_data: accountDataFromForm }
+                : {}),
+              is_external: Boolean(normalizedData.is_external),
+              external_product_url: normalizedData.is_external
+                ? (normalizedData.external_product_url || '')
+                : undefined,
+            }
           : {}),
-        is_external: Boolean(normalizedData.is_external),
-        external_product_url: normalizedData.is_external
-          ? (normalizedData.external_product_url || '')
-          : undefined,
         status: finalStatus,
         shop_id: shopId ? String(shopId) : undefined,
         language: router.locale || 'ru',
         product_type: productType,
-        ...(!normalizedData.is_external && normalizedData.digital_file_input?.id
+        ...(DIGITAL_DELIVERY_ENABLED && !normalizedData.is_external && normalizedData.digital_file_input?.id
           ? {
               digital_file: {
                 attachment_id: normalizedData.digital_file_input.id,
@@ -795,7 +802,7 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
         // ВАЖНО: Отправляем slug_numeric_code отдельно (только для существующих товаров)
         // Бэкенд использует его для сохранения кода при обновлении
         ...(productId && slugNumericCode ? { slug_numeric_code: slugNumericCode } : {}),
-        ...(normalizedData.digital_product_type === 'subscription'
+        ...(DIGITAL_DELIVERY_ENABLED && normalizedData.digital_product_type === 'subscription'
           ? {
               course: (() => {
                 const cr = (data as any).course;
@@ -912,7 +919,7 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
         let variantsToSave = [...groupVariants];
         if (productId) {
           // Проверяем, есть ли текущий товар в списке вариантов
-          const currentVariantIndex = variantsToSave.findIndex((v: any) => v.id === String(productId));
+          const currentVariantIndex = variantsToSave.findIndex((v: any) => String(v.id) === String(productId));
           if (currentVariantIndex !== -1) {
             // Текущий товар уже в списке - обновляем его данные
             const oldVariant = variantsToSave[currentVariantIndex];
@@ -1460,14 +1467,8 @@ function ProductEditorContent({
 
       <section className="wb-section" data-section="pricing">
         <h2>Цена и наличие</h2>
-        <p className="wb-section-hint">Цена, остаток и цифровые настройки продажи</p>
+        <p className="wb-section-hint">Цена, остаток и артикул товара</p>
         <StepPricing />
-      </section>
-
-      <section className="wb-section" data-section="course">
-        <h2>Курс и подписка</h2>
-        <p className="wb-section-hint">Уроки и срок доступа — если тип товара это требует</p>
-        <StepCourse />
       </section>
     </ProductEditorShell>
   );

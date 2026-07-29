@@ -2,7 +2,6 @@ import { useFormContext } from 'react-hook-form';
 import FileInput from '@/components/ui/file-input';
 import Card from '@/components/common/card';
 import Description from '@/components/ui/description';
-import ProductAiServices from '@/components/product/product-ai-services';
 import { ProductEditorFormData } from '@/schemas/product-editor.schema';
 import { useProductEditorStore } from '@/store/useProductEditorStore';
 import { useEffect } from 'react';
@@ -233,8 +232,6 @@ export default function StepMedia() {
         </Card>
       </div>
       */}
-
-      <ProductAiServices product={product} />
     </div>
   );
 }

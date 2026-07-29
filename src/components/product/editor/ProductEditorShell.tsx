@@ -1,8 +1,6 @@
 import { ReactNode } from 'react';
 import StickyProductGallery from './StickyProductGallery';
 import VariantsRail from './VariantsRail';
-import ProductAiServices from '@/components/product/product-ai-services';
-import { useProductEditorStore } from '@/store/useProductEditorStore';
 import { useFormContext } from 'react-hook-form';
 import { ProductEditorFormData } from '@/schemas/product-editor.schema';
 
@@ -17,7 +15,6 @@ export default function ProductEditorShell({
   footer,
   productId,
 }: ProductEditorShellProps) {
-  const { product } = useProductEditorStore();
   const { watch } = useFormContext<ProductEditorFormData>();
   const name = watch('name');
   const gallery = watch('gallery');
@@ -77,11 +74,6 @@ export default function ProductEditorShell({
               <li>Рекомендуется вертикальный кадр 3:4</li>
             </ul>
           </details>
-
-          <div className="wb-card">
-            <h2 className="wb-card-title">AI-сервисы</h2>
-            <ProductAiServices product={product} />
-          </div>
         </aside>
       </div>
 
