@@ -1,3 +1,136 @@
-import { FormEvent,useEffect,useState } from 'react'; import Layout from '@/components/layouts/admin'; import Card from '@/components/common/card'; import Button from '@/components/ui/button'; import { HttpClient } from '@/data/client/http-client'; import { adminOwnerAndStaffOnly } from '@/utils/auth-utils'; import { serverSideTranslations } from 'next-i18next/serverSideTranslations'; import { toast } from 'react-toastify';
-export default function PaymentProfiles(){const [rows,setRows]=useState<any[]>([]);const [form,setForm]=useState({receiver_name:'',phone:'+7',bank_name:'',payment_link:''});const [qr,setQr]=useState<File>();const load=()=>HttpClient.get<any[]>('/seller/payment-profiles').then(setRows);useEffect(()=>{load();},[]);const submit=async(e:FormEvent)=>{e.preventDefault();const d=new FormData();Object.entries(form).forEach(([k,v])=>v&&d.append(k,v));d.append('type','person_sbp');if(qr)d.append('qr',qr);await HttpClient.post('/seller/payment-profiles',d);toast.success('Профиль сохранён');setForm({receiver_name:'',phone:'+7',bank_name:'',payment_link:''});setQr(undefined);load();};const action=async(id:number,a:string)=>{await HttpClient.post(`/seller/payment-profiles/${id}/${a}`,{});load();};return <div className="grid gap-6 xl:grid-cols-[420px_1fr]"><Card><h1 className="text-xl font-bold">Профиль оплаты по СБП</h1><p className="mt-2 text-sm text-body">Для прямых переводов физлицо → физлицо. Не используется в оплате сайта.</p><form onSubmit={submit} className="mt-5 space-y-3">{[['receiver_name','Имя получателя'],['phone','Телефон +7'],['bank_name','Банк'],['payment_link','HTTPS-ссылка банка (необязательно)']].map(([k,l])=><label key={k} className="block text-sm font-semibold">{l}<input value={(form as any)[k]} onChange={e=>setForm({...form,[k]:e.target.value})} className="mt-1 w-full rounded border p-3" required={k!=='payment_link'}/></label>)}<label className="block text-sm font-semibold">QR из приложения банка<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setQr(e.target.files?.[0])} className="mt-1 block w-full rounded border p-3"/></label><Button>Сохранить профиль</Button></form></Card><Card className="overflow-x-auto p-0"><table className="w-full text-left text-sm"><thead><tr className="border-b bg-gray-50"><th className="p-4">Получатель</th><th className="p-4">Телефон</th><th className="p-4">Банк</th><th className="p-4">Статус</th><th className="p-4">Действия</th></tr></thead><tbody>{rows.map(p=><tr key={p.id} className="border-b"><td className="p-4 font-semibold">{p.receiver_name}</td><td className="p-4">{p.phone}</td><td className="p-4">{p.bank_name}</td><td className="p-4">{p.is_default?'Основной':p.is_active?'Активен':'Отключён'}</td><td className="space-x-2 p-4"><button onClick={()=>action(p.id,'set-default')} className="text-accent">Основной</button>{p.is_active?<button onClick={()=>action(p.id,'deactivate')}>Отключить</button>:<button onClick={()=>action(p.id,'activate')}>Включить</button>}</td></tr>)}</tbody></table></Card></div>}
-PaymentProfiles.authenticate={permissions:adminOwnerAndStaffOnly};PaymentProfiles.Layout=Layout;export const getStaticProps=async({locale}:any)=>({props:{...(await serverSideTranslations(locale,['common','form','table']))}});
+import { FormEvent, useEffect, useState } from 'react';
+import Layout from '@/components/layouts/admin';
+import Card from '@/components/common/card';
+import Button from '@/components/ui/button';
+import { HttpClient } from '@/data/client/http-client';
+import { adminOwnerAndStaffOnly } from '@/utils/auth-utils';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { toast } from 'react-toastify';
+export default function PaymentProfiles() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [form, setForm] = useState({
+    receiver_name: '',
+    phone: '+7',
+    bank_name: '',
+    payment_link: '',
+  });
+  const [qr, setQr] = useState<File>();
+  const load = () =>
+    HttpClient.get<any[]>('/api/seller/payment-profiles').then(setRows);
+  useEffect(() => {
+    load();
+  }, []);
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    const d = new FormData();
+    Object.entries(form).forEach(([k, v]) => v && d.append(k, v));
+    d.append('type', 'person_sbp');
+    if (qr) d.append('qr', qr);
+    await HttpClient.post('/api/seller/payment-profiles', d);
+    toast.success('Профиль сохранён');
+    setForm({
+      receiver_name: '',
+      phone: '+7',
+      bank_name: '',
+      payment_link: '',
+    });
+    setQr(undefined);
+    load();
+  };
+  const action = async (id: number, a: string) => {
+    await HttpClient.post(`/api/seller/payment-profiles/${id}/${a}`, {});
+    load();
+  };
+  return (
+    <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+      <Card>
+        <h1 className="text-xl font-bold">Профиль оплаты по СБП</h1>
+        <p className="mt-2 text-sm text-body">
+          Для прямых переводов физлицо → физлицо. Не используется в оплате
+          сайта.
+        </p>
+        <form onSubmit={submit} className="mt-5 space-y-3">
+          {[
+            ['receiver_name', 'Имя получателя'],
+            ['phone', 'Телефон +7'],
+            ['bank_name', 'Банк'],
+            ['payment_link', 'HTTPS-ссылка банка (необязательно)'],
+          ].map(([k, l]) => (
+            <label key={k} className="block text-sm font-semibold">
+              {l}
+              <input
+                value={(form as any)[k]}
+                onChange={(e) => setForm({ ...form, [k]: e.target.value })}
+                className="mt-1 w-full rounded border p-3"
+                required={k !== 'payment_link'}
+              />
+            </label>
+          ))}
+          <label className="block text-sm font-semibold">
+            QR из приложения банка
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => setQr(e.target.files?.[0])}
+              className="mt-1 block w-full rounded border p-3"
+            />
+          </label>
+          <Button>Сохранить профиль</Button>
+        </form>
+      </Card>
+      <Card className="overflow-x-auto p-0">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b bg-gray-50">
+              <th className="p-4">Получатель</th>
+              <th className="p-4">Телефон</th>
+              <th className="p-4">Банк</th>
+              <th className="p-4">Статус</th>
+              <th className="p-4">Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((p) => (
+              <tr key={p.id} className="border-b">
+                <td className="p-4 font-semibold">{p.receiver_name}</td>
+                <td className="p-4">{p.phone}</td>
+                <td className="p-4">{p.bank_name}</td>
+                <td className="p-4">
+                  {p.is_default
+                    ? 'Основной'
+                    : p.is_active
+                    ? 'Активен'
+                    : 'Отключён'}
+                </td>
+                <td className="space-x-2 p-4">
+                  <button
+                    onClick={() => action(p.id, 'set-default')}
+                    className="text-accent"
+                  >
+                    Основной
+                  </button>
+                  {p.is_active ? (
+                    <button onClick={() => action(p.id, 'deactivate')}>
+                      Отключить
+                    </button>
+                  ) : (
+                    <button onClick={() => action(p.id, 'activate')}>
+                      Включить
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+    </div>
+  );
+}
+PaymentProfiles.authenticate = { permissions: adminOwnerAndStaffOnly };
+PaymentProfiles.Layout = Layout;
+export const getStaticProps = async ({ locale }: any) => ({
+  props: {
+    ...(await serverSideTranslations(locale, ['common', 'form', 'table'])),
+  },
+});
