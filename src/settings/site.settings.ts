@@ -149,7 +149,7 @@ export const siteSettings = {
     ],
     shop: [
       {
-        href: Routes.paymentProfiles,
+          href: (_shop: string) => Routes.paymentProfiles,
         label: 'Платёжные профили СБП',
         icon: 'TaxesIcon',
         permissions: adminOwnerAndStaffOnly,
