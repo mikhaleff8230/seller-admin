@@ -15,6 +15,7 @@ export default function PaymentProfiles() {
     payment_link: '',
   });
   const [qr, setQr] = useState<File>();
+  const [saving, setSaving] = useState(false);
   const load = () =>
     HttpClient.get<any[]>('/api/seller/payment-profiles').then(setRows);
   useEffect(() => {
@@ -22,20 +23,30 @@ export default function PaymentProfiles() {
   }, []);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const d = new FormData();
-    Object.entries(form).forEach(([k, v]) => v && d.append(k, v));
-    d.append('type', 'person_sbp');
-    if (qr) d.append('qr', qr);
-    await HttpClient.post('/api/seller/payment-profiles', d);
-    toast.success('Профиль сохранён');
-    setForm({
-      receiver_name: '',
-      phone: '+7',
-      bank_name: '',
-      payment_link: '',
-    });
-    setQr(undefined);
-    load();
+    setSaving(true);
+    try {
+      const d = new FormData();
+      const digits = form.phone.replace(/\D/g, '');
+      const phone = digits.length === 11 && digits.startsWith('8') ? `+7${digits.slice(1)}` : `+${digits}`;
+      d.append('receiver_name', form.receiver_name.trim());
+      d.append('phone', phone);
+      d.append('bank_name', form.bank_name.trim());
+      if (form.payment_link.trim()) d.append('payment_link', form.payment_link.trim());
+      d.append('type', 'person_sbp');
+      d.append('is_active', '1');
+      if (qr) d.append('qr', qr);
+      await HttpClient.post('/api/seller/payment-profiles', d);
+      toast.success('Профиль сохранён');
+      setForm({ receiver_name: '', phone: '+7', bank_name: '', payment_link: '' });
+      setQr(undefined);
+      await load();
+    } catch (error: any) {
+      const errors = error?.response?.data?.errors;
+      const message = errors ? Object.values(errors).flat().join(' ') : error?.response?.data?.message;
+      toast.error(message || 'Не удалось сохранить профиль');
+    } finally {
+      setSaving(false);
+    }
   };
   const action = async (id: number, a: string) => {
     await HttpClient.post(`/api/seller/payment-profiles/${id}/${a}`, {});
@@ -75,7 +86,7 @@ export default function PaymentProfiles() {
               className="mt-1 block w-full rounded border p-3"
             />
           </label>
-          <Button>Сохранить профиль</Button>
+          <Button type="submit" loading={saving} disabled={saving}>Сохранить профиль</Button>
         </form>
       </Card>
       <Card className="overflow-x-auto p-0">
