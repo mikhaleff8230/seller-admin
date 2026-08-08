@@ -21,6 +21,7 @@ import AuthTabs from './auth-tabs';
 import PhoneInput from '@/components/ui/forms/phone-input';
 import OtpCodeInput from './otp-code-input';
 import { toast } from 'react-toastify';
+import { trackSellerRegistrationSuccess } from '@/lib/metrika';
 
 type FormValues = {
   name: string;
@@ -83,6 +84,7 @@ const RegistrationForm = () => {
         onSuccess: (data) => {
           if (data?.token) {
             if (hasAccess(allowedRoles, data?.permissions)) {
+              trackSellerRegistrationSuccess();
               setAuthCredentials(data?.token, data?.permissions);
               router.push(Routes.dashboard);
               return;
@@ -180,6 +182,7 @@ const RegistrationForm = () => {
             });
             
             if (hasAccess(allowedRoles, data?.permissions)) {
+              trackSellerRegistrationSuccess();
               setAuthCredentials(data?.token, data?.permissions);
               router.push(Routes.dashboard);
               return;
