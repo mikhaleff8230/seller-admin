@@ -83,6 +83,13 @@ export const siteSettings = {
         label: 'sidebar-nav-item-orders',
         icon: 'OrdersIcon',
       },
+      {
+        href: Routes.secondLife,
+        label: 'Second Hand / СБП',
+        icon: 'OrdersIcon',
+        permissions: adminOnly,
+      },
+      { href: Routes.banners, label: 'Баннеры', icon: 'SettingsIcon', permissions: adminOnly },
       // {
       //   href: Routes.order.create,
       //   label: 'sidebar-nav-item-create-order',
@@ -141,6 +148,12 @@ export const siteSettings = {
       },
     ],
     shop: [
+      {
+        href: Routes.paymentProfiles,
+        label: 'Платёжные профили СБП',
+        icon: 'TaxesIcon',
+        permissions: adminOwnerAndStaffOnly,
+      },
       {
         href: (shop: string) => `${Routes.dashboard}${shop}`,
         label: 'sidebar-nav-item-dashboard',
