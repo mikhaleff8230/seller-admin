@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import cn from 'classnames';
 
 interface AuthTabsProps {
@@ -8,28 +7,28 @@ interface AuthTabsProps {
 
 export default function AuthTabs({ activeTab, onTabChange }: AuthTabsProps) {
   return (
-    <div className="mb-6 flex rounded-lg bg-gray-100 p-1 dark:bg-dark-400">
+    <div className="mb-6 flex rounded-xl bg-violet-50 p-1.5 dark:bg-dark-400">
       <button
         type="button"
         onClick={() => onTabChange('phone')}
         className={cn(
-          'flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors',
+          'flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors',
           {
-            'bg-white text-dark shadow-sm dark:bg-dark-300 dark:text-light': activeTab === 'phone',
-            'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200': activeTab === 'email',
+            'bg-violet-700 text-white shadow-sm': activeTab === 'phone',
+            'text-violet-700 hover:bg-violet-100 dark:text-gray-300': activeTab === 'email',
           }
         )}
       >
-        По телефону
+        По звонку
       </button>
       <button
         type="button"
         onClick={() => onTabChange('email')}
         className={cn(
-          'flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors',
+          'flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors',
           {
-            'bg-white text-dark shadow-sm dark:bg-dark-300 dark:text-light': activeTab === 'email',
-            'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200': activeTab === 'phone',
+            'bg-violet-700 text-white shadow-sm': activeTab === 'email',
+            'text-violet-700 hover:bg-violet-100 dark:text-gray-300': activeTab === 'phone',
           }
         )}
       >

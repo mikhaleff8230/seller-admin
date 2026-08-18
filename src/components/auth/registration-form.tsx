@@ -284,9 +284,9 @@ const RegistrationForm = () => {
                 onClick={handleSendOtp}
                 disabled={isSendingOtp || !phoneNumber || !name}
                 loading={isSendingOtp}
-                className="w-full mb-4"
+                className="mb-4 w-full !bg-violet-700 hover:!bg-violet-800"
               >
-                {isSendingOtp ? 'Подготовка...' : 'ПОДТВЕРДИТЬ ЗВОНКОМ'}
+                {isSendingOtp ? 'Получаем номер...' : 'Получить номер для звонка'}
               </Button>
             </>
           ) : (
@@ -355,7 +355,7 @@ const RegistrationForm = () => {
             variant="outline"
             className="mb-4"
           />
-          <Button className="w-full" loading={loading} disabled={loading}>
+          <Button className="w-full !bg-violet-700 hover:!bg-violet-800" loading={loading} disabled={loading}>
             {t('form:text-register')}
           </Button>
 

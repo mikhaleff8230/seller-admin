@@ -18,9 +18,10 @@ import {
 } from '@/utils/auth-utils';
 import AuthTabs from './auth-tabs';
 import PhoneInput from '@/components/ui/forms/phone-input';
-import OtpCodeInput from './otp-code-input';
 import PinCodeInput from './pin-code-input';
 import { toast } from 'react-toastify';
+import Cookies from 'js-cookie';
+import { AUTH_CRED } from '@/utils/constants';
 
 const loginFormSchema = yup.object().shape({
   email: yup
@@ -39,7 +40,6 @@ const LoginForm = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otpId, setOtpId] = useState<string | null>(null);
   const [callTo, setCallTo] = useState<string | null>(null);
-  const [otpCode, setOtpCode] = useState('');
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [otpError, setOtpError] = useState('');
@@ -54,6 +54,12 @@ const LoginForm = () => {
   const { mutate: sendOtp } = useSendOtpCode();
   const { mutate: otpLogin } = useOtpLogin();
   const { mutate: verifyPin } = useVerifyPinCode();
+
+  useEffect(() => {
+    // Страница входа должна начинаться с чистой сессии. Иначе просроченный
+    // токен попадает даже в публичные запросы и создаёт непонятные 403.
+    Cookies.remove(AUTH_CRED);
+  }, []);
 
   function onSubmit({ email, password }: LoginInput) {
     login(
@@ -99,12 +105,12 @@ const LoginForm = () => {
             toast.success('Позвоните на указанный номер для подтверждения');
           } else {
             setIsSendingOtp(false);
-            toast.error('Ошибка отправки кода');
+            setOtpError('Не удалось подготовить звонок. Попробуйте ещё раз.');
           }
         },
         onError: (error: any) => {
           setIsSendingOtp(false);
-          toast.error(error.response?.data?.message || 'Ошибка отправки кода');
+          setOtpError('Не удалось подготовить звонок. Проверьте номер и попробуйте ещё раз.');
         },
       }
     );
@@ -196,7 +202,6 @@ const LoginForm = () => {
     setActiveTab(tab);
     setOtpId(null);
     setCallTo(null);
-    setOtpCode('');
     setOtpError('');
     setPhoneNumber('');
     setShowPinForm(false);
@@ -218,6 +223,9 @@ const LoginForm = () => {
                 <>
                   {/* Поле ввода телефона */}
                   <div>
+                    <p className="mb-4 rounded-lg bg-violet-50 p-3 text-sm leading-5 text-violet-900">
+                      Введите свой номер. Мы покажем номер REDSMS — позвоните на него с указанного телефона. Звонок бесплатный и завершится автоматически.
+                    </p>
                     <label className="mb-2 block text-sm font-medium text-heading">
                       Телефон
                     </label>
@@ -234,9 +242,9 @@ const LoginForm = () => {
                     onClick={handleSendOtp}
                     disabled={isSendingOtp || !phoneNumber}
                     loading={isSendingOtp}
-                    className="w-full mb-4"
+                    className="mb-4 w-full !bg-violet-700 hover:!bg-violet-800"
                   >
-                    {isSendingOtp ? 'Подготовка...' : 'ВОЙТИ ПО ЗВОНКУ'}
+                    {isSendingOtp ? 'Получаем номер...' : 'Получить номер для звонка'}
                   </Button>
 
                   <div className="relative my-4 flex flex-col items-center justify-center text-sm text-heading">
@@ -272,7 +280,6 @@ const LoginForm = () => {
                       onClick={() => {
                         setOtpId(null);
                         setCallTo(null);
-                        setOtpCode('');
                         setOtpError('');
                       }}
                       disabled={isVerifyingOtp}
@@ -340,6 +347,16 @@ const LoginForm = () => {
         </div>
       )}
 
+      {otpError ? (
+        <Alert
+          message={otpError}
+          variant="error"
+          closeable={true}
+          className="mt-5"
+          onClose={() => setOtpError('')}
+        />
+      ) : null}
+
       {/* Форма входа по email */}
       {activeTab === 'email' && (
         <Form<LoginInput> validationSchema={loginFormSchema} onSubmit={onSubmit}>
@@ -366,26 +383,20 @@ const LoginForm = () => {
                 {t('form:button-label-login')}
               </Button>
 
-              <div className="relative mt-8 mb-6 flex flex-col items-center justify-center text-sm text-heading sm:mt-11 sm:mb-8">
-                <hr className="w-full" />
-                <span className="absolute -top-2.5 bg-light px-2 -ms-4 start-2/4">
-                  {t('common:text-or')}
-                </span>
-              </div>
-
-              <div className="text-center text-sm text-body sm:text-base">
-                {t('form:text-no-account')}{' '}
-                <Link
-                  href={Routes.register}
-                  className="font-semibold text-accent underline transition-colors duration-200 ms-1 hover:text-accent-hover hover:no-underline focus:text-accent-700 focus:no-underline focus:outline-none"
-                >
-                  {t('form:link-register-shop-owner')}
-                </Link>
-              </div>
             </>
           )}
         </Form>
       )}
+
+      <div className="mt-7 rounded-xl border border-violet-200 bg-violet-50 p-4 text-center">
+        <p className="mb-3 text-sm text-violet-900">Первый раз на SANCAN?</p>
+        <Link
+          href={Routes.register}
+          className="block w-full rounded-lg bg-violet-700 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-violet-800"
+        >
+          Зарегистрироваться как продавец
+        </Link>
+      </div>
       
       {errorMessage ? (
         <Alert

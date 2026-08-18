@@ -23,7 +23,7 @@ export default function RegisterPage() {
   return (
     <AuthPageLayout>
       <h3 className="mb-6 mt-4 text-center text-base italic text-gray-500">
-        {t('admin-register-title')}
+        Регистрация продавца
       </h3>
       <RegistrationForm />
     </AuthPageLayout>
