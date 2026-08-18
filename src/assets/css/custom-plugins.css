@@ -564,13 +564,13 @@ group
 	@apply !bg-yellow-500;
 }
 
-/* Черный текст для всех toast уведомлений */
+/* Белый текст для системных toast-уведомлений на темном фоне */
 .Toastify__toast-theme--colored .Toastify__toast-body {
-	color: #000000 !important;
+	color: #ffffff !important;
 }
 
 .Toastify__toast-theme--colored .Toastify__close-button {
-	color: #000000 !important;
+	color: #ffffff !important;
 	opacity: 0.8;
 }
 
