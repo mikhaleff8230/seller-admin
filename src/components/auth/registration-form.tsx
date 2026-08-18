@@ -126,6 +126,11 @@ const RegistrationForm = () => {
       {
         onSuccess: (data: any) => {
           if (data.success && data.id) {
+            if (data.is_contact_exist) {
+              setIsSendingOtp(false);
+              setOtpError('Этот номер уже зарегистрирован. Перейдите на страницу входа.');
+              return;
+            }
             setOtpId(data.id);
             setCallTo(data.call_to || null);
             setIsSendingOtp(false);
@@ -192,6 +197,9 @@ const RegistrationForm = () => {
             // Если прав недостаточно, выводим более подробную ошибку
             console.error('Access denied. User permissions:', data?.permissions, 'Allowed roles:', allowedRoles);
             setOtpError('Регистрация успешна, но недостаточно прав. Обратитесь к администратору.');
+            setIsVerifyingOtp(false);
+          } else if (callTo && data?.success === false) {
+            // Подтверждение звонком ещё ожидается — продолжаем опрос без ошибки.
             setIsVerifyingOtp(false);
           } else {
             setOtpError('Ошибка регистрации');

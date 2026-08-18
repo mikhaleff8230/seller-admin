@@ -99,6 +99,11 @@ const LoginForm = () => {
       {
         onSuccess: (data: any) => {
           if (data.success && data.id) {
+            if (!data.is_contact_exist) {
+              setIsSendingOtp(false);
+              setOtpError('Аккаунт продавца с таким номером не найден. Зарегистрируйтесь или проверьте номер.');
+              return;
+            }
             setOtpId(data.id);
             setCallTo(data.call_to || null);
             setIsSendingOtp(false);
@@ -137,6 +142,9 @@ const LoginForm = () => {
               return;
             }
             setOtpError('Недостаточно прав доступа');
+            setIsVerifyingOtp(false);
+          } else if (callTo && data?.success === false) {
+            // Подтверждение звонком ещё ожидается — продолжаем опрос без ошибки.
             setIsVerifyingOtp(false);
           } else {
             setOtpError('Ошибка входа');
