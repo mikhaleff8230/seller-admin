@@ -22,6 +22,7 @@ import PinCodeInput from './pin-code-input';
 import { toast } from 'react-toastify';
 import Cookies from 'js-cookie';
 import { AUTH_CRED } from '@/utils/constants';
+import { formatRussianPhone, phoneHref } from '@/utils/format-phone';
 
 const loginFormSchema = yup.object().shape({
   email: yup
@@ -95,9 +96,14 @@ const LoginForm = () => {
     setIsSendingOtp(true);
     setOtpError('');
     sendOtp(
-      { phone_number: phoneNumber },
+      { phone_number: phoneNumber, mode: 'login' },
       {
         onSuccess: (data: any) => {
+          if (!data.success) {
+            setIsSendingOtp(false);
+            setOtpError(data.message || 'Не удалось подготовить звонок. Попробуйте ещё раз.');
+            return;
+          }
           if (data.success && data.id) {
             if (!data.is_contact_exist) {
               setIsSendingOtp(false);
@@ -287,7 +293,9 @@ const LoginForm = () => {
                     <p className="mb-2 text-center text-sm text-body">
                       Позвоните с номера {phoneNumber} на
                     </p>
-                    <a href={`tel:${callTo}`} className="block text-center text-xl font-bold text-accent">{callTo}</a>
+                    <a href={phoneHref(callTo)} className="block text-center text-2xl font-bold tracking-wide text-accent">
+                      {formatRussianPhone(callTo)}
+                    </a>
                     <p className="mt-2 text-center text-xs text-body">Звонок будет сброшен автоматически. Проверяем подтверждение…</p>
                   </div>
 

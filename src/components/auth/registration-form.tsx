@@ -22,6 +22,7 @@ import PhoneInput from '@/components/ui/forms/phone-input';
 import OtpCodeInput from './otp-code-input';
 import { toast } from 'react-toastify';
 import { trackSellerRegistrationSuccess } from '@/lib/metrika';
+import { formatRussianPhone, phoneHref } from '@/utils/format-phone';
 
 type FormValues = {
   name: string;
@@ -122,9 +123,14 @@ const RegistrationForm = () => {
     setIsSendingOtp(true);
     setOtpError('');
     sendOtp(
-      { phone_number: phoneNumber },
+      { phone_number: phoneNumber, mode: 'register' },
       {
         onSuccess: (data: any) => {
+          if (!data.success) {
+            setIsSendingOtp(false);
+            setOtpError(data.message || 'Не удалось подготовить звонок. Попробуйте ещё раз.');
+            return;
+          }
           if (data.success && data.id) {
             if (data.is_contact_exist) {
               setIsSendingOtp(false);
@@ -303,7 +309,9 @@ const RegistrationForm = () => {
                 <p className="mb-2 text-center text-sm text-body">
                   Позвоните с номера {phoneNumber} на
                 </p>
-                <a href={`tel:${callTo}`} className="block text-center text-xl font-bold text-accent">{callTo}</a>
+                <a href={phoneHref(callTo)} className="block text-center text-2xl font-bold tracking-wide text-accent">
+                  {formatRussianPhone(callTo)}
+                </a>
                 <p className="mt-2 text-center text-xs text-body">Звонок будет сброшен автоматически. Проверяем подтверждение…</p>
               </div>
 

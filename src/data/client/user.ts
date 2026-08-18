@@ -92,7 +92,7 @@ export const userClient = {
   updateEmail: ({ email }: { email: string }) => {
     return HttpClient.post<any>(API_ENDPOINTS.UPDATE_EMAIL, { email });
   },
-  sendOtpCode: (variables: { phone_number: string }) => {
+  sendOtpCode: (variables: { phone_number: string; mode?: 'login' | 'register' }) => {
     return HttpClient.post<any>(API_ENDPOINTS.SEND_OTP_CODE, variables);
   },
   verifyOtpCode: (variables: { phone_number: string; otp_id: string; code: string }) => {
