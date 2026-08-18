@@ -6,6 +6,7 @@ import Link from '@/components/ui/link';
 import { Routes } from '@/config/routes';
 import Loader from '@/components/ui/loader/loader';
 import { useMeQuery } from '@/data/user';
+import SellerSidebarMenu from '@/components/layouts/navigation/seller-sidebar-menu';
 
 const UserDetails: React.FC = () => {
   const { t } = useTranslation('common');
@@ -44,6 +45,7 @@ const UserDetails: React.FC = () => {
         )}
         {data?.is_active ? 'Enabled' : 'Disabled'}
       </div>
+      <SellerSidebarMenu />
     </div>
   );
 };

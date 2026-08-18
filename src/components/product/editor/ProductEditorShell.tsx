@@ -8,12 +8,22 @@ type ProductEditorShellProps = {
   children: ReactNode;
   footer: ReactNode;
   productId?: string | number;
+  boostEnabled: boolean;
+  boostStatus: string;
+  boostBalance: string;
+  boostBusy: boolean;
+  onBoostToggle: (enabled: boolean) => void;
 };
 
 export default function ProductEditorShell({
   children,
   footer,
   productId,
+  boostEnabled,
+  boostStatus,
+  boostBalance,
+  boostBusy,
+  onBoostToggle,
 }: ProductEditorShellProps) {
   const { watch } = useFormContext<ProductEditorFormData>();
   const name = watch('name');
@@ -49,6 +59,40 @@ export default function ProductEditorShell({
         </main>
 
         <aside className="wb-editor-right wb-sticky space-y-3">
+          <div className="wb-card">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="wb-card-title">Boost продвижение</h2>
+                <p style={{ fontSize: 13, color: '#8c8c8c', margin: '6px 0 0' }}>
+                  Баланс: {boostBalance} ₽
+                </p>
+                <p style={{ fontSize: 12, color: '#8c8c8c', margin: '4px 0 0' }}>
+                  {!productId && boostEnabled
+                    ? 'Запустится сразу после создания товара'
+                    : boostStatus === 'starting'
+                      ? 'Продвижение включается…'
+                      : boostStatus === 'stopping'
+                        ? 'Продвижение выключается…'
+                        : boostStatus === 'error'
+                          ? 'Ошибка синхронизации'
+                          : boostEnabled
+                            ? 'Продвижение активно'
+                            : 'Продвижение выключено'}
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={boostBusy}
+                onClick={() => onBoostToggle(!boostEnabled)}
+                className={`relative mt-1 h-7 w-14 shrink-0 rounded-full transition ${boostEnabled ? 'bg-[#232323]' : 'bg-gray-300'} disabled:opacity-50`}
+                aria-label="Boost продвижение"
+                aria-pressed={boostEnabled}
+              >
+                <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${boostEnabled ? 'left-8' : 'left-1'}`} />
+              </button>
+            </div>
+          </div>
+
           <div className="wb-card">
             <h2 className="wb-card-title">Видеообложка</h2>
             <p style={{ fontSize: 13, color: '#8c8c8c', margin: 0 }}>

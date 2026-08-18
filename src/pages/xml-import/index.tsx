@@ -90,9 +90,9 @@ function XmlImportPageContent() {
   const [logLevelFilter, setLogLevelFilter] = useState<string>('all');
   const [logCodeFilter, setLogCodeFilter] = useState<string>('');
   const [logSearch, setLogSearch] = useState<string>('');
-  const [chunkSize, setChunkSize] = useState<number>(25); // Размер чанка (уменьшено для экономии памяти)
+  const [chunkSize, setChunkSize] = useState<number>(10);
   const [importProgress, setImportProgress] = useState<any>(null); // Прогресс chunked импорта
-  const [useChunked, setUseChunked] = useState<boolean>(false); // Chunked отключен - только простой импорт
+  const [useChunked, setUseChunked] = useState<boolean>(true);
   const [attributeMappings, setAttributeMappings] = useState<AttributeMappingRow[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -1132,7 +1132,7 @@ function XmlImportPageContent() {
               <h3 className="text-lg font-semibold mb-3">Маппинг характеристик (атрибутов)</h3>
               <p className="text-sm text-gray-600 mb-3">
                 Здесь можно связать характеристики из XML/YML вида
-                {' '}<code>&lt;param name="Гарантийный срок"&gt;1 год&lt;/param&gt;</code>{' '}
+                {' '}<code>&lt;param name=&quot;Гарантийный срок&quot;&gt;1 год&lt;/param&gt;</code>{' '}
                 с атрибутами в системе. Слева — как атрибут будет называться у нас,
                 справа — значение атрибута <code>name</code> в XML.
               </p>

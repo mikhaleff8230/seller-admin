@@ -19,6 +19,7 @@ import { formatSlug } from '@/utils/use-slug';
 import { manufacturerClient } from '@/data/client/manufacturer';
 import { productClient } from '@/data/client/product';
 import { Config } from '@/config';
+import { HttpClient } from '@/data/client/http-client';
 
 type ProductEditorProps = {
   initialProduct?: Product | null;
@@ -58,6 +59,48 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
 
   const { mutate: createProduct, isLoading: creating } = useCreateProductMutation();
   const { mutate: updateProductMutation, isLoading: updating } = useUpdateProductMutation();
+  const [boostEnabled, setBoostEnabled] = React.useState(Boolean((initialProduct as any)?.boost_enabled));
+  const [boostStatus, setBoostStatus] = React.useState(String((initialProduct as any)?.boost_status || 'off'));
+  const [boostBalance, setBoostBalance] = React.useState('0.00');
+  const [boostBusy, setBoostBusy] = React.useState(false);
+
+  React.useEffect(() => {
+    setBoostEnabled(Boolean((initialProduct as any)?.boost_enabled));
+    setBoostStatus(String((initialProduct as any)?.boost_status || 'off'));
+    HttpClient.get<any>('/api/seller/balance')
+      .then((response) => setBoostBalance(String(response?.data?.balance ?? response?.balance ?? '0.00')))
+      .catch(() => undefined);
+  }, [initialProduct]);
+
+  const handleBoostToggle = async (enabled: boolean) => {
+    if (boostBusy) return;
+    if (!productId) {
+      setBoostEnabled(enabled);
+      setBoostStatus(enabled ? 'starting' : 'off');
+      return;
+    }
+    setBoostBusy(true);
+    try {
+      const result = await HttpClient.put<any>(`/api/products/${productId}/boost`, { enabled });
+      setBoostEnabled(Boolean(result?.boost_enabled ?? enabled));
+      setBoostStatus(String(result?.boost_status ?? (enabled ? 'starting' : 'stopping')));
+      toast.success(enabled ? 'Boost включается' : 'Boost выключается');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Не удалось изменить Boost');
+    } finally {
+      setBoostBusy(false);
+    }
+  };
+
+  const startBoostAfterCreate = async (createdProductId: string | number) => {
+    if (!boostEnabled) return;
+    try {
+      const result = await HttpClient.put<any>(`/api/products/${createdProductId}/boost`, { enabled: true });
+      setBoostStatus(String(result?.boost_status ?? 'starting'));
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Товар создан, но Boost не удалось запустить');
+    }
+  };
 
   // Сохраняем 12-значный код из slug_numeric_code или из slug (неизменяемый, извлекается при загрузке)
   const [slugNumericCode, setSlugNumericCode] = React.useState<string | null>(
@@ -1102,7 +1145,7 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
           );
         } else {
           createProduct(submitData as any, {
-            onSuccess: (response: any) => {
+            onSuccess: async (response: any) => {
               toast.success(t('common:text-create-success'));
               if (response) {
                 setProduct(response);
@@ -1115,6 +1158,7 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
               }
               
               if (response?.id) {
+                await startBoostAfterCreate(response.id);
                 router.push(`/${router.query.shop}/products/${response.slug}/edit-wizard`);
               }
               setIsLoading(false);
@@ -1413,6 +1457,11 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
         creating={creating}
         updating={updating}
         productId={productId}
+        boostEnabled={boostEnabled}
+        boostStatus={boostStatus}
+        boostBalance={boostBalance}
+        boostBusy={boostBusy}
+        onBoostToggle={handleBoostToggle}
       />
     </FormProvider>
   );
@@ -1423,11 +1472,21 @@ function ProductEditorContent({
   creating,
   updating,
   productId,
+  boostEnabled,
+  boostStatus,
+  boostBalance,
+  boostBusy,
+  onBoostToggle,
 }: {
   handleSave: (data: ProductEditorFormData, publish: boolean) => Promise<void>;
   creating: boolean;
   updating: boolean;
   productId?: string | number;
+  boostEnabled: boolean;
+  boostStatus: string;
+  boostBalance: string;
+  boostBusy: boolean;
+  onBoostToggle: (enabled: boolean) => void;
 }) {
   const { getValues, clearErrors: clearFormErrors } = useFormContext<ProductEditorFormData>();
   const { clearErrors } = useProductEditorStore();
@@ -1444,6 +1503,11 @@ function ProductEditorContent({
   return (
     <ProductEditorShell
       productId={productId}
+      boostEnabled={boostEnabled}
+      boostStatus={boostStatus}
+      boostBalance={boostBalance}
+      boostBusy={boostBusy}
+      onBoostToggle={onBoostToggle}
       footer={
         <EditorActions
           onSave={performSave}
