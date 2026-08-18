@@ -29,6 +29,30 @@ type IProps = {
   onSort: (current: any) => void;
   onOrder: (current: string) => void;
 };
+
+const formatUserDate = (value?: string | null, emptyText = '—') => {
+  if (!value) return emptyText;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return emptyText;
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const daysAgo = Math.round(
+    (startOfToday.getTime() - startOfDate.getTime()) / 86_400_000
+  );
+  const time = date.toLocaleTimeString('ru-RU', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  if (daysAgo === 0) return `Сегодня, ${time}`;
+  if (daysAgo === 1) return `Вчера, ${time}`;
+
+  return `${date.toLocaleDateString('ru-RU')}, ${time}`;
+};
+
 const CustomerList = ({
   customers,
   paginatorInfo,
@@ -157,6 +181,23 @@ const CustomerList = ({
       align: 'center',
     },
     {
+      title: 'Регистрация',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      align: 'center',
+      width: 150,
+      render: (createdAt: string) => formatUserDate(createdAt),
+    },
+    {
+      title: 'Последний вход',
+      dataIndex: 'last_login_at',
+      key: 'last_login_at',
+      align: 'center',
+      width: 150,
+      render: (lastLoginAt?: string | null) =>
+        formatUserDate(lastLoginAt, 'Ещё не входил'),
+    },
+    {
       title: (
         <TitleWithSort
           title={t('table:table-item-status')}
@@ -218,7 +259,7 @@ const CustomerList = ({
           emptyText={t('table:empty-table-data')}
           data={customers}
           rowKey="id"
-          scroll={{ x: 800 }}
+          scroll={{ x: 1120 }}
         />
       </div>
 

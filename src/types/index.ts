@@ -422,6 +422,7 @@ export interface User {
   is_active: boolean;
   email: string;
   created_at: string;
+  last_login_at?: string | null;
   updated_at: string;
   profile?: Profile;
   address: Address[];
