@@ -211,6 +211,16 @@ const LoginForm = () => {
 
   return (
     <>
+      <div className="mb-6 rounded-xl border border-violet-200 bg-violet-50 p-3 text-center">
+        <span className="text-sm text-violet-900">Нет аккаунта продавца? </span>
+        <Link
+          href={Routes.register}
+          className="font-semibold text-violet-700 underline decoration-2 underline-offset-2 hover:text-violet-900"
+        >
+          Зарегистрироваться
+        </Link>
+      </div>
+
       {/* Переключатель вкладок */}
       <AuthTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
@@ -242,7 +252,7 @@ const LoginForm = () => {
                     onClick={handleSendOtp}
                     disabled={isSendingOtp || !phoneNumber}
                     loading={isSendingOtp}
-                    className="mb-4 w-full !bg-violet-700 hover:!bg-violet-800"
+                    className="mb-4 w-full !bg-violet-700 !text-white hover:!bg-violet-800"
                   >
                     {isSendingOtp ? 'Получаем номер...' : 'Получить номер для звонка'}
                   </Button>
@@ -388,16 +398,6 @@ const LoginForm = () => {
         </Form>
       )}
 
-      <div className="mt-7 rounded-xl border border-violet-200 bg-violet-50 p-4 text-center">
-        <p className="mb-3 text-sm text-violet-900">Первый раз на SANCAN?</p>
-        <Link
-          href={Routes.register}
-          className="block w-full rounded-lg bg-violet-700 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-violet-800"
-        >
-          Зарегистрироваться как продавец
-        </Link>
-      </div>
-      
       {errorMessage ? (
         <Alert
           message={t(errorMessage)}
