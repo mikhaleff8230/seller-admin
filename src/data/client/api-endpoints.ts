@@ -6,6 +6,7 @@ export const API_ENDPOINTS = {
   ORDER_STATUS: 'order-status',
   ORDERS: 'orders',
   USERS: 'users',
+  IMPERSONATE_USER: 'admin/users',
   REGISTER: 'register',
   PRODUCTS: 'products',
   POPULAR_PRODUCTS: 'popular-products',

@@ -45,6 +45,10 @@ export function useLogin() {
   return useMutation(userClient.login);
 }
 
+export function useImpersonateUserMutation() {
+  return useMutation((id: string) => userClient.impersonate(id));
+}
+
 export function useSendOtpCode() {
   return useMutation(userClient.sendOtpCode);
 }

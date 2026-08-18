@@ -22,6 +22,11 @@ import { API_ENDPOINTS } from './api-endpoints';
 import { HttpClient } from './http-client';
 
 export const userClient = {
+  impersonate: (id: string) => {
+    return HttpClient.post<AuthResponse & {
+      impersonated_user: { id: string; name: string; email: string };
+    }>(`${API_ENDPOINTS.IMPERSONATE_USER}/${id}/impersonate`, {});
+  },
   me: () => {
     return HttpClient.get<User>(API_ENDPOINTS.ME);
   },

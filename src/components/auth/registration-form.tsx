@@ -3,7 +3,7 @@ import Button from '@/components/ui/button';
 import Input from '@/components/ui/input';
 import PasswordInput from '@/components/ui/password-input';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Routes } from '@/config/routes';
 import { useTranslation } from 'next-i18next';
@@ -47,6 +47,7 @@ const RegistrationForm = () => {
   // Состояние для OTP
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otpId, setOtpId] = useState<string | null>(null);
+  const [callTo, setCallTo] = useState<string | null>(null);
   const [otpCode, setOtpCode] = useState('');
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
@@ -126,8 +127,9 @@ const RegistrationForm = () => {
         onSuccess: (data: any) => {
           if (data.success && data.id) {
             setOtpId(data.id);
+            setCallTo(data.call_to || null);
             setIsSendingOtp(false);
-            toast.success(`Код отправлен на ${phoneNumber}`);
+            toast.success('Позвоните на указанный номер для подтверждения');
           } else {
             setIsSendingOtp(false);
             toast.error('Ошибка отправки кода');
@@ -198,6 +200,7 @@ const RegistrationForm = () => {
         },
         onError: (error: any) => {
           setIsVerifyingOtp(false);
+          if (callTo) return;
           console.error('Registration error:', error);
           setOtpError(error.response?.data?.message || 'Неверный код');
           toast.error(error.response?.data?.message || 'Неверный код');
@@ -206,10 +209,17 @@ const RegistrationForm = () => {
     );
   };
 
+  useEffect(() => {
+    if (!otpId || !callTo || isVerifyingOtp) return;
+    const timer = window.setInterval(() => handleVerifyOtp(''), 2500);
+    return () => window.clearInterval(timer);
+  }, [otpId, callTo, isVerifyingOtp]);
+
   // Сброс состояния при смене вкладки
   const handleTabChange = (tab: 'phone' | 'email') => {
     setActiveTab(tab);
     setOtpId(null);
+    setCallTo(null);
     setOtpCode('');
     setOtpError('');
     setPhoneNumber('');
@@ -276,24 +286,17 @@ const RegistrationForm = () => {
                 loading={isSendingOtp}
                 className="w-full mb-4"
               >
-                {isSendingOtp ? 'Отправка...' : 'ПОЛУЧИТЬ КОД'}
+                {isSendingOtp ? 'Подготовка...' : 'ПОДТВЕРДИТЬ ЗВОНКОМ'}
               </Button>
             </>
           ) : (
             <>
-              {/* Поле ввода OTP кода */}
               <div>
-                <p className="mb-4 text-center text-sm text-body">
-                  Введите код из SMS, отправленный на {phoneNumber}
+                <p className="mb-2 text-center text-sm text-body">
+                  Позвоните с номера {phoneNumber} на
                 </p>
-                <OtpCodeInput
-                  length={6}
-                  value={otpCode}
-                  onChange={setOtpCode}
-                  onComplete={handleVerifyOtp}
-                  disabled={isVerifyingOtp}
-                  error={otpError}
-                />
+                <a href={`tel:${callTo}`} className="block text-center text-xl font-bold text-accent">{callTo}</a>
+                <p className="mt-2 text-center text-xs text-body">Звонок будет сброшен автоматически. Проверяем подтверждение…</p>
               </div>
 
               <div className="flex gap-2">
@@ -302,6 +305,7 @@ const RegistrationForm = () => {
                   variant="outline"
                   onClick={() => {
                     setOtpId(null);
+                    setCallTo(null);
                     setOtpCode('');
                     setOtpError('');
                   }}
@@ -317,7 +321,7 @@ const RegistrationForm = () => {
                   disabled={isSendingOtp || isVerifyingOtp}
                   className="flex-1"
                 >
-                  Отправить снова
+                  Получить новый номер
                 </Button>
               </div>
             </>

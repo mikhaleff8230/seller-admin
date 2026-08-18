@@ -2,6 +2,7 @@ import Navbar from '@/components/layouts/navigation/top-navbar';
 import OwnerInformation from '@/components/user/user-details';
 import MobileNavigation from '@/components/layouts/navigation/mobile-navigation';
 import { useRouter } from 'next/router';
+import ImpersonationBanner from '@/components/auth/impersonation-banner';
 
 const OwnerLayout: React.FC<{ children?: React.ReactNode }> = ({
   children,
@@ -13,6 +14,7 @@ const OwnerLayout: React.FC<{ children?: React.ReactNode }> = ({
       className="flex min-h-screen flex-col bg-gray-100 transition-colors duration-150"
       dir={dir}
     >
+      <ImpersonationBanner />
       <Navbar />
       <MobileNavigation>
         <OwnerInformation />

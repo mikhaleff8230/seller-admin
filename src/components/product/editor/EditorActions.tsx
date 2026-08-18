@@ -74,14 +74,6 @@ export default function EditorActions({
       <>
         {errorBlock}
         <div className="wb-footer">
-          <NextLink
-            href={listHref}
-            className="wb-btn wb-btn-ghost"
-            style={{ textDecoration: 'none' }}
-          >
-            К списку товаров
-          </NextLink>
-
           <div className="wb-footer-actions">
             <span
               style={{
@@ -95,6 +87,13 @@ export default function EditorActions({
                 ? ` · ${new Date(lastSaved).toLocaleTimeString()}`
                 : ''}
             </span>
+            <NextLink
+              href={listHref}
+              className="wb-btn wb-btn-ghost"
+              style={{ textDecoration: 'none' }}
+            >
+              К списку товаров
+            </NextLink>
             <button
               type="button"
               className="wb-btn wb-btn-ghost"
@@ -103,14 +102,16 @@ export default function EditorActions({
             >
               {isLoading ? 'Сохранение…' : 'Сохранить'}
             </button>
-            <button
-              type="button"
-              className="wb-btn wb-btn-primary"
-              onClick={() => onSave(true)}
-              disabled={isLoading}
-            >
-              {productId ? 'Отредактировать' : 'Опубликовать'}
-            </button>
+            {!productId && (
+              <button
+                type="button"
+                className="wb-btn wb-btn-primary"
+                onClick={() => onSave(true)}
+                disabled={isLoading}
+              >
+                Опубликовать
+              </button>
+            )}
           </div>
         </div>
       </>

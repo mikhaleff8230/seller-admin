@@ -48,6 +48,7 @@ import { useModalAction } from '@/components/ui/modal/modal.context';
 import OpenAIButton from '@/components/openAI/openAI.button';
 import { ItemProps } from '@/types';
 import { formatSlug } from '@/utils/use-slug';
+import { HttpClient } from '@/data/client/http-client';
 
 export const chatbotAutoSuggestion = ({ name }: { name: string }) => {
   return [
@@ -106,6 +107,10 @@ export default function CreateOrUpdateProductForm({
   const router = useRouter();
   const videoInputRef = useRef<HTMLInputElement>(null);
   const [videoPreview, setVideoPreview] = useState<string>('');
+  const [boostEnabled, setBoostEnabled] = useState(Boolean(initialValues?.boost_enabled));
+  const [boostStatus, setBoostStatus] = useState(initialValues?.boost_status || 'off');
+  const [boostBalance, setBoostBalance] = useState<string>('0.00');
+  const [boostBusy, setBoostBusy] = useState(false);
   const { locale } = router;
   
   // Инициализируем превью видео при загрузке формы, если есть существующее видео
@@ -120,6 +125,24 @@ export default function CreateOrUpdateProductForm({
       setVideoPreview('');
     }
   }, [initialValues?.video]);
+  useEffect(() => {
+    setBoostEnabled(Boolean(initialValues?.boost_enabled));
+    setBoostStatus(initialValues?.boost_status || 'off');
+    if (initialValues?.id) HttpClient.get<any>('/api/seller/balance').then((r) => setBoostBalance(String(r?.data?.balance ?? '0.00'))).catch(() => undefined);
+  }, [initialValues?.id, initialValues?.boost_enabled, initialValues?.boost_status]);
+
+  const toggleBoost = async (enabled: boolean) => {
+    if (!initialValues?.id || boostBusy) return;
+    setBoostBusy(true);
+    try {
+      const result = await HttpClient.put<any>(`/api/products/${initialValues.id}/boost`, { enabled });
+      setBoostEnabled(Boolean(result.boost_enabled));
+      setBoostStatus(result.boost_status);
+      toast.success(enabled ? 'Продвижение включается' : 'Продвижение выключается');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Не удалось изменить продвижение');
+    } finally { setBoostBusy(false); }
+  };
   const {
     // @ts-ignore
     settings: { options },
@@ -735,6 +758,18 @@ export default function CreateOrUpdateProductForm({
               />
             </Card>
           </div>
+
+          {initialValues?.id && (
+            <div className="my-5 flex flex-wrap border-b border-dashed border-border-base pb-8 sm:my-8">
+              <Description title="Продвижение" details="Увеличить показы товара через рекламу SANCAN" className="w-full px-0 pb-5 sm:w-4/12 sm:py-8 sm:pe-4 md:w-1/3 md:pe-5" />
+              <Card className="w-full sm:w-8/12 md:w-2/3">
+                <div className="flex items-center justify-between gap-4">
+                  <div><div className="font-semibold">Продвигать товар</div><div className="mt-1 text-sm text-body">Баланс: {boostBalance} ₽</div><div className="mt-1 text-xs text-body">{boostStatus === 'starting' ? 'Продвижение включается…' : boostStatus === 'stopping' ? 'Продвижение выключается…' : boostStatus === 'error' ? 'Ошибка синхронизации' : boostEnabled ? 'Продвижение активно' : 'Продвижение выключено'}</div></div>
+                  <button type="button" disabled={boostBusy} onClick={() => toggleBoost(!boostEnabled)} className={`relative h-7 w-14 rounded-full transition ${boostEnabled ? 'bg-accent' : 'bg-gray-300'} disabled:opacity-50`} aria-label="Продвигать товар"><span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${boostEnabled ? 'left-8' : 'left-1'}`} /></button>
+                </div>
+              </Card>
+            </div>
+          )}
 
           {/* ВРЕМЕННО ЗАКОММЕНТИРОВАНО: Раздел добавления видео */}
           {false && (

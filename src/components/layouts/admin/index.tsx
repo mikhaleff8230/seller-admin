@@ -6,6 +6,7 @@ import { useTranslation } from 'next-i18next';
 import SidebarItem from '@/components/layouts/navigation/sidebar-item';
 import { useRouter } from 'next/router';
 import { getAuthCredentials, hasAccess } from '@/utils/auth-utils';
+import ImpersonationBanner from '@/components/auth/impersonation-banner';
 
 const AdminLayout: React.FC<{ children?: React.ReactNode }> = ({
   children,
@@ -33,6 +34,7 @@ const AdminLayout: React.FC<{ children?: React.ReactNode }> = ({
       className="flex min-h-screen flex-col bg-gray-100 transition-colors duration-150"
       dir={dir}
     >
+      <ImpersonationBanner />
       <Navbar />
       <MobileNavigation>
         <SidebarItemMap />

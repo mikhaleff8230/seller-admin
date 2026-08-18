@@ -637,6 +637,11 @@ export interface Product {
   weight?: number;
   price: number;
   quantity?: number;
+  boost_enabled?: boolean;
+  boost_status?: 'off' | 'starting' | 'on' | 'stopping' | 'error';
+  boost_started_at?: string | null;
+  boost_stopped_at?: string | null;
+  boost_last_error?: string | null;
   unit?: string;
   external_product_url?: string;
   external_product_button_text?: string;

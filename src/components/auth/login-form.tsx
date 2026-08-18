@@ -8,7 +8,7 @@ import Form from '@/components/ui/forms/form';
 import { Routes } from '@/config/routes';
 import { useLogin, useSendOtpCode, useOtpLogin, useVerifyPinCode } from '@/data/user';
 import type { LoginInput, OtpLoginInput, PinLoginInput } from '@/types';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Alert from '@/components/ui/alert';
 import Router from 'next/router';
 import {
@@ -38,6 +38,7 @@ const LoginForm = () => {
   // Состояние для OTP
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otpId, setOtpId] = useState<string | null>(null);
+  const [callTo, setCallTo] = useState<string | null>(null);
   const [otpCode, setOtpCode] = useState('');
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
@@ -93,8 +94,9 @@ const LoginForm = () => {
         onSuccess: (data: any) => {
           if (data.success && data.id) {
             setOtpId(data.id);
+            setCallTo(data.call_to || null);
             setIsSendingOtp(false);
-            toast.success(`Код отправлен на ${phoneNumber}`);
+            toast.success('Позвоните на указанный номер для подтверждения');
           } else {
             setIsSendingOtp(false);
             toast.error('Ошибка отправки кода');
@@ -137,12 +139,19 @@ const LoginForm = () => {
         },
         onError: (error: any) => {
           setIsVerifyingOtp(false);
+          if (callTo) return;
           setOtpError(error.response?.data?.message || 'Неверный код');
           toast.error(error.response?.data?.message || 'Неверный код');
         },
       }
     );
   };
+
+  useEffect(() => {
+    if (!otpId || !callTo || isVerifyingOtp) return;
+    const timer = window.setInterval(() => handleVerifyOtp(''), 2500);
+    return () => window.clearInterval(timer);
+  }, [otpId, callTo, isVerifyingOtp]);
 
   // Обработчик проверки PIN кода
   const handleVerifyPin = (code: string) => {
@@ -186,6 +195,7 @@ const LoginForm = () => {
   const handleTabChange = (tab: 'phone' | 'email') => {
     setActiveTab(tab);
     setOtpId(null);
+    setCallTo(null);
     setOtpCode('');
     setOtpError('');
     setPhoneNumber('');
@@ -226,7 +236,7 @@ const LoginForm = () => {
                     loading={isSendingOtp}
                     className="w-full mb-4"
                   >
-                    {isSendingOtp ? 'Отправка...' : 'ПОЛУЧИТЬ КОД'}
+                    {isSendingOtp ? 'Подготовка...' : 'ВОЙТИ ПО ЗВОНКУ'}
                   </Button>
 
                   <div className="relative my-4 flex flex-col items-center justify-center text-sm text-heading">
@@ -247,19 +257,12 @@ const LoginForm = () => {
                 </>
               ) : (
                 <>
-                  {/* Поле ввода OTP кода */}
                   <div>
-                    <p className="mb-4 text-center text-sm text-body">
-                      Введите код из SMS, отправленный на {phoneNumber}
+                    <p className="mb-2 text-center text-sm text-body">
+                      Позвоните с номера {phoneNumber} на
                     </p>
-                    <OtpCodeInput
-                      length={6}
-                      value={otpCode}
-                      onChange={setOtpCode}
-                      onComplete={handleVerifyOtp}
-                      disabled={isVerifyingOtp}
-                      error={otpError}
-                    />
+                    <a href={`tel:${callTo}`} className="block text-center text-xl font-bold text-accent">{callTo}</a>
+                    <p className="mt-2 text-center text-xs text-body">Звонок будет сброшен автоматически. Проверяем подтверждение…</p>
                   </div>
 
                   <div className="flex gap-2">
@@ -268,6 +271,7 @@ const LoginForm = () => {
                       variant="outline"
                       onClick={() => {
                         setOtpId(null);
+                        setCallTo(null);
                         setOtpCode('');
                         setOtpError('');
                       }}
@@ -283,7 +287,7 @@ const LoginForm = () => {
                       disabled={isSendingOtp || isVerifyingOtp}
                       className="flex-1"
                     >
-                      Отправить снова
+                      Получить новый номер
                     </Button>
                   </div>
                 </>
@@ -329,7 +333,7 @@ const LoginForm = () => {
                 disabled={isVerifyingPin}
                 className="w-full"
               >
-                Вернуться к SMS
+                Вернуться ко входу по звонку
               </Button>
             </>
           )}

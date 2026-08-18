@@ -11,6 +11,7 @@ import { CloseFillIcon } from '@/components/icons/close-fill';
 import { AdminIcon } from '@/components/icons/admin-icon';
 import { ClipboardIcon } from '@/components/icons/clipboard';
 import { WalletPlusIcon } from '@/components/icons/wallet-plus-icon';
+import { LoginIcon } from '@/components/icons/login-icon';
 
 type Props = {
   id: string;
@@ -27,9 +28,11 @@ type Props = {
   showMakeAdminButton?: boolean;
   showReplyQuestion?: boolean;
   showVirtualDeposit?: boolean;
+  showImpersonate?: boolean;
   customLocale?: string;
   onCopy?: () => void;
   onVirtualDeposit?: (sellerId: string) => void;
+  onImpersonate?: (userId: string) => void;
 };
 
 const ActionButtons = ({
@@ -49,7 +52,9 @@ const ActionButtons = ({
   showVirtualDeposit = false,
   customLocale,
   onCopy,
-  onVirtualDeposit
+  onVirtualDeposit,
+  showImpersonate = false,
+  onImpersonate,
 }: Props) => {
   const { t } = useTranslation();
   const { openModal } = useModalAction();
@@ -122,6 +127,15 @@ const ActionButtons = ({
           title="Виртуальное пополнение баланса"
         >
           <WalletPlusIcon width={22} />
+        </button>
+      )}
+      {showImpersonate && (
+        <button
+          onClick={() => onImpersonate?.(id)}
+          className="text-accent transition duration-200 hover:text-accent-hover focus:outline-none"
+          title="Авторизоваться как пользователь"
+        >
+          <LoginIcon width={20} />
         </button>
       )}
       {showAddWalletPoints && (

@@ -15,7 +15,11 @@ import { useTranslation } from 'next-i18next';
 import { useIsRTL } from '@/utils/locals';
 import { useState } from 'react';
 import TitleWithSort from '@/components/ui/title-with-sort';
-import { getAuthCredentials, hasAccess, adminOnly } from '@/utils/auth-utils';
+import { getAuthCredentials, hasAccess, adminOnly, setAuthCredentials } from '@/utils/auth-utils';
+import { useImpersonateUserMutation } from '@/data/user';
+import { useRouter } from 'next/router';
+import { toast } from 'react-toastify';
+import { Routes } from '@/config/routes';
 import VirtualDepositBalanceModal from '@/components/billing/virtual-deposit-balance-modal';
 
 type IProps = {
@@ -36,6 +40,25 @@ const CustomerList = ({
   const { alignLeft } = useIsRTL();
   const { permissions } = getAuthCredentials();
   const isSuperAdmin = hasAccess(adminOnly, permissions);
+  const router = useRouter();
+  const { mutateAsync: impersonate, isLoading: isImpersonating } = useImpersonateUserMutation();
+
+  const handleImpersonate = async (userId: string) => {
+    if (isImpersonating) return;
+    if (!window.confirm('Авторизоваться как этот пользователь? Действия будут выполняться от его имени.')) return;
+
+    try {
+      const adminCredentials = getAuthCredentials();
+      const response = await impersonate(userId);
+      sessionStorage.setItem('sancan_admin_credentials', JSON.stringify(adminCredentials));
+      sessionStorage.setItem('sancan_impersonated_user', JSON.stringify(response.impersonated_user));
+      setAuthCredentials(response.token, response.permissions);
+      await router.replace(Routes.dashboard);
+      router.reload();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Не удалось войти от имени пользователя');
+    }
+  };
 
   const [sortingObj, setSortingObj] = useState<{
     sort: SortOrder;
@@ -175,6 +198,8 @@ const CustomerList = ({
                 showAddWalletPoints={true}
                 showMakeAdminButton={true}
                 showVirtualDeposit={showVirtualDeposit}
+                showImpersonate={isSuperAdmin && !record?.permissions?.some((perm: { name: string }) => perm.name === 'super_admin')}
+                onImpersonate={handleImpersonate}
                 onVirtualDeposit={(sellerId) => handleVirtualDeposit(sellerId, record?.name)}
               />
             )}

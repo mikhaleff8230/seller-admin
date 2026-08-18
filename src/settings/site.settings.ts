@@ -90,6 +90,7 @@ export const siteSettings = {
         permissions: adminOnly,
       },
       { href: Routes.banners, label: 'Баннеры', icon: 'SettingsIcon', permissions: adminOnly },
+      { href: Routes.yandexDirect, label: 'Яндекс Директ', icon: 'SettingsIcon', permissions: adminOnly },
       // {
       //   href: Routes.order.create,
       //   label: 'sidebar-nav-item-create-order',
@@ -148,6 +149,12 @@ export const siteSettings = {
       },
     ],
     shop: [
+      {
+        href: (_shop: string) => Routes.promotion,
+        label: 'Продвижение',
+        icon: 'DashboardIcon',
+        permissions: adminAndOwnerOnly,
+      },
       {
           href: (_shop: string) => Routes.paymentProfiles,
         label: 'Платёжные профили СБП',
