@@ -32,9 +32,9 @@ export default function ImpersonationBanner() {
   };
 
   return (
-    <div className="fixed inset-x-0 top-0 z-[60] flex items-center justify-center gap-4 bg-amber-400 px-4 py-2 text-sm font-semibold text-gray-900 shadow">
-      <span>Вы вошли как {user.name || user.email}</span>
-      <button onClick={stopImpersonating} className="rounded bg-gray-900 px-3 py-1 text-white hover:bg-gray-700">
+    <div className="fixed left-1/2 top-2 z-[60] flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center justify-center gap-2 rounded-full border border-amber-400/60 bg-amber-300/80 px-3 py-1.5 text-xs font-semibold text-gray-900 shadow-lg backdrop-blur-md sm:gap-3 sm:px-4 sm:text-sm">
+      <span className="max-w-[45vw] truncate">Вы вошли как {user.name || user.email}</span>
+      <button onClick={stopImpersonating} className="whitespace-nowrap rounded-full bg-[#232323] px-3 py-1 text-white hover:bg-black">
         Вернуться в админку
       </button>
     </div>
