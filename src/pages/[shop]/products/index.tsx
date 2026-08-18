@@ -17,6 +17,7 @@ import { toast } from 'react-toastify';
 import { Config } from '@/config';
 import { Routes } from '@/config/routes';
 import { useProductsQuery } from '@/data/product';
+import { API_ENDPOINTS } from '@/data/client/api-endpoints';
 import { useShopQuery } from '@/data/shop';
 import { useMeQuery } from '@/data/user';
 import { productClient } from '@/data/client/product';
@@ -32,9 +33,11 @@ import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
+import { useQueryClient } from 'react-query';
 
 export default function ProductsPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { permissions } = getAuthCredentials();
   const { data: me } = useMeQuery();
   const {
@@ -60,6 +63,7 @@ export default function ProductsPage() {
   const { locale, query } = useRouter();
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [isUngrouping, setIsUngrouping] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Получаем group_key из query параметров для фильтрации
   useEffect(() => {
@@ -208,6 +212,54 @@ export default function ProductsPage() {
     }
   };
 
+  const handleBulkDelete = async (productIds: string[]) => {
+    if (!shopId || productIds.length === 0 || isDeleting) return;
+
+    const currentShopProductIds = new Set(
+      (products || [])
+        .filter((product: any) => Number(product.shop_id) === Number(shopId))
+        .map((product: any) => String(product.id))
+    );
+    const scopedProductIds = productIds.filter((id) =>
+      currentShopProductIds.has(String(id))
+    );
+
+    if (scopedProductIds.length !== productIds.length) {
+      toast.error('Список товаров изменился. Обновите страницу и выберите товары заново.');
+      setSelectedProducts([]);
+      return;
+    }
+
+    if (!window.confirm(`Удалить выбранные товары (${scopedProductIds.length})? Это действие нельзя отменить.`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const results = await Promise.allSettled(
+        scopedProductIds.map((productId) => productClient.delete(productId))
+      );
+      const failedIds = scopedProductIds.filter(
+        (_, index) => results[index].status === 'rejected'
+      );
+      const deletedCount = scopedProductIds.length - failedIds.length;
+
+      if (deletedCount > 0) {
+        toast.success(`Удалено товаров: ${deletedCount}`);
+      }
+      if (failedIds.length > 0) {
+        toast.error(`Не удалось удалить товаров: ${failedIds.length}`);
+      }
+
+      setSelectedProducts(failedIds);
+      await queryClient.invalidateQueries(API_ENDPOINTS.PRODUCTS);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Не удалось удалить выбранные товары');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (
     !hasAccess(adminOnly, permissions) &&
     !me?.shops?.map((shop) => shop.id).includes(shopId) &&
@@ -345,8 +397,8 @@ export default function ProductsPage() {
         isUngrouping={isUngrouping}
         onEditGroup={handleEditGroup}
         canEditGroup={canEditGroup()}
-        onBulkDelete={undefined}
-        isDeleting={false}
+        onBulkDelete={handleBulkDelete}
+        isDeleting={isDeleting}
       />
     </>
   );
