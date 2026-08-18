@@ -1,6 +1,11 @@
-export function formatRussianPhone(value?: string | null): string {
+export function normalizeRussianPhone(value?: string | null): string {
   const digits = String(value ?? '').replace(/\D/g, '');
   const national = digits.slice(-10);
+  return national.length === 10 ? `7${national}` : digits;
+}
+
+export function formatRussianPhone(value?: string | null): string {
+  const national = normalizeRussianPhone(value).slice(-10);
 
   if (national.length !== 10) return value ?? '';
 
@@ -8,6 +13,6 @@ export function formatRussianPhone(value?: string | null): string {
 }
 
 export function phoneHref(value?: string | null): string {
-  const digits = String(value ?? '').replace(/\D/g, '');
+  const digits = normalizeRussianPhone(value);
   return digits ? `tel:+${digits}` : '#';
 }

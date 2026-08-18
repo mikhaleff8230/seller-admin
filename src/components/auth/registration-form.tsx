@@ -22,7 +22,7 @@ import PhoneInput from '@/components/ui/forms/phone-input';
 import OtpCodeInput from './otp-code-input';
 import { toast } from 'react-toastify';
 import { trackSellerRegistrationSuccess } from '@/lib/metrika';
-import { formatRussianPhone, phoneHref } from '@/utils/format-phone';
+import { formatRussianPhone, normalizeRussianPhone, phoneHref } from '@/utils/format-phone';
 
 type FormValues = {
   name: string;
@@ -123,7 +123,7 @@ const RegistrationForm = () => {
     setIsSendingOtp(true);
     setOtpError('');
     sendOtp(
-      { phone_number: phoneNumber, mode: 'register' },
+      { phone_number: normalizeRussianPhone(phoneNumber), mode: 'register' },
       {
         onSuccess: (data: any) => {
           if (!data.success) {
@@ -176,7 +176,7 @@ const RegistrationForm = () => {
       {
         otp_id: otpId,
         code: code,
-        phone_number: phoneNumber,
+        phone_number: normalizeRussianPhone(phoneNumber),
         name: name,
         email: email || `${phoneNumber.replace(/\D/g, '')}@phone.auth`,
         permission: permissionValue, // Передаем строку 'store_owner'

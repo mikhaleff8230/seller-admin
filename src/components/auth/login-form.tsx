@@ -22,7 +22,7 @@ import PinCodeInput from './pin-code-input';
 import { toast } from 'react-toastify';
 import Cookies from 'js-cookie';
 import { AUTH_CRED } from '@/utils/constants';
-import { formatRussianPhone, phoneHref } from '@/utils/format-phone';
+import { formatRussianPhone, normalizeRussianPhone, phoneHref } from '@/utils/format-phone';
 
 const loginFormSchema = yup.object().shape({
   email: yup
@@ -96,7 +96,7 @@ const LoginForm = () => {
     setIsSendingOtp(true);
     setOtpError('');
     sendOtp(
-      { phone_number: phoneNumber, mode: 'login' },
+      { phone_number: normalizeRussianPhone(phoneNumber), mode: 'login' },
       {
         onSuccess: (data: any) => {
           if (!data.success) {
@@ -137,7 +137,7 @@ const LoginForm = () => {
       {
         otp_id: otpId,
         code: code,
-        phone_number: phoneNumber,
+        phone_number: normalizeRussianPhone(phoneNumber),
       },
       {
         onSuccess: (data) => {
@@ -184,7 +184,7 @@ const LoginForm = () => {
     setPinError('');
     verifyPin(
       {
-        phone_number: phoneNumber,
+        phone_number: normalizeRussianPhone(phoneNumber),
         pin_code: code,
       },
       {
