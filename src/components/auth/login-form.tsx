@@ -234,7 +234,7 @@ const LoginForm = () => {
                   {/* Поле ввода телефона */}
                   <div>
                     <p className="mb-4 rounded-lg bg-violet-50 p-3 text-sm leading-5 text-violet-900">
-                      Введите свой номер. Мы покажем номер REDSMS — позвоните на него с указанного телефона. Звонок бесплатный и завершится автоматически.
+                      Введите номер телефона, привязанный к аккаунту продавца. Для подтверждения позвоните на номер, который появится ниже. Звонок бесплатный и завершится автоматически.
                     </p>
                     <label className="mb-2 block text-sm font-medium text-heading">
                       Телефон
@@ -268,7 +268,7 @@ const LoginForm = () => {
                     type="button"
                     variant="outline"
                     onClick={() => setShowPinForm(true)}
-                    className="w-full"
+                    className="w-full hover:!border-violet-700 hover:!bg-violet-50 hover:!text-violet-700"
                   >
                     Войти по PIN-коду
                   </Button>
