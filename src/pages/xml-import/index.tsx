@@ -873,10 +873,10 @@ function XmlImportPageContent() {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          🔒 Импорт XML товаров (Только для Супер-Админа)
+          Импорт XML / CSV товаров
         </h1>
         <p className="text-gray-600">
-          Загрузите XML файл и настройте маппинг полей для импорта товаров
+          Выберите свой магазин, загрузите файл и настройте сопоставление полей
         </p>
       </div>
 

@@ -4,18 +4,31 @@ import { getIcon } from '@/utils/get-icon';
 import * as sidebarIcons from '@/components/icons/sidebar';
 import { Routes } from '@/config/routes';
 import cn from 'classnames';
-
-const items = [
-  { href: Routes.dashboard, label: 'Мои магазины', icon: 'MyShopIcon' },
-  { href: Routes.promotion, label: 'Продвижение', icon: 'DashboardIcon' },
-  { href: Routes.profileUpdate, label: 'Профиль продавца', icon: 'UsersIcon' },
-  { href: Routes.billing.list, label: 'Баланс и платежи', icon: 'TaxesIcon' },
-  { href: Routes.paymentProfiles, label: 'Платёжные профили', icon: 'TaxesIcon' },
-  { href: Routes.xmlImport.list, label: 'Импорт XML / CSV', icon: 'ImportIcon' },
-];
+import { useMeQuery } from '@/data/user';
 
 export default function SellerSidebarMenu() {
   const router = useRouter();
+  const { data: me } = useMeQuery();
+  const selectedShopId = typeof router.query.shop_id === 'string' ? router.query.shop_id : '';
+  const shops = me?.shops || [];
+  const selectedShop = shops.find((shop: any) => String(shop.id) === selectedShopId) || shops[0];
+  const shopSlug = selectedShop?.slug;
+  const promotionHref = selectedShop ? `${Routes.promotion}?shop_id=${selectedShop.id}` : Routes.promotion;
+  const items = [
+    { href: Routes.dashboard, label: 'Мои магазины', icon: 'MyShopIcon' },
+    { href: promotionHref, activeHref: Routes.promotion, label: 'Продвижение', icon: 'DashboardIcon' },
+    { href: Routes.paymentProfiles, label: 'Платёжные профили СБП', icon: 'TaxesIcon' },
+    { href: Routes.xmlImport.list, label: 'Импорт XML / CSV', icon: 'ImportIcon' },
+    ...(shopSlug ? [
+      { href: `/${shopSlug}`, label: 'Панель продавца', icon: 'DashboardIcon' },
+      { href: `/${shopSlug}${Routes.product.list}`, label: 'Товары', icon: 'ProductsIcon' },
+      { href: `/${shopSlug}${Routes.order.list}`, label: 'Заказы', icon: 'OrdersIcon' },
+      { href: `/${shopSlug}${Routes.reviews.list}`, label: 'Отзывы', icon: 'ReviewIcon' },
+      { href: `/${shopSlug}${Routes.question.list}`, label: 'Сообщения', icon: 'QuestionIcon' },
+      { href: `/${shopSlug}/billing`, label: 'Баланс и платежи', icon: 'TaxesIcon' },
+      { href: `/${shopSlug}${Routes.staff.list}`, label: 'Сотрудники', icon: 'UsersIcon' },
+    ] : []),
+  ];
 
   return (
     <nav className="mt-7 w-full border-t border-gray-100 pt-4" aria-label="Меню продавца">
@@ -24,9 +37,10 @@ export default function SellerSidebarMenu() {
       </div>
       <div className="space-y-1">
         {items.map((item) => {
-          const active = item.href === '/'
+          const activePath = item.activeHref || item.href;
+          const active = activePath === '/'
             ? router.pathname === '/'
-            : router.pathname.startsWith(item.href);
+            : router.pathname.startsWith(activePath.split('?')[0]);
           return (
             <Link
               key={item.href}
