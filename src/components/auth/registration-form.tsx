@@ -23,6 +23,7 @@ import OtpCodeInput from './otp-code-input';
 import { toast } from 'react-toastify';
 import { trackSellerRegistrationSuccess } from '@/lib/metrika';
 import { formatRussianPhone, normalizeRussianPhone, phoneHref } from '@/utils/format-phone';
+import RegistrationConsents from './registration-consents';
 
 type FormValues = {
   name: string;
@@ -55,6 +56,13 @@ const RegistrationForm = () => {
   const [otpError, setOtpError] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [consents, setConsents] = useState({ terms: false, privacy: false, emailMarketing: false, pushMarketing: false });
+  const consentPayload = {
+    accept_terms: consents.terms,
+    accept_privacy: consents.privacy,
+    marketing_email_consent: consents.emailMarketing,
+    marketing_push_consent: consents.pushMarketing,
+  };
 
   const {
     register,
@@ -75,12 +83,17 @@ const RegistrationForm = () => {
   const { mutate: otpLogin } = useOtpLogin();
 
   async function onSubmit({ name, email, password, permission }: FormValues) {
+    if (!consents.terms || !consents.privacy) {
+      toast.error('Примите обязательные документы и согласие на обработку данных');
+      return;
+    }
     registerUser(
       {
         name,
         email,
         password,
         permission,
+        ...consentPayload,
       },
       {
         onSuccess: (data) => {
@@ -110,6 +123,10 @@ const RegistrationForm = () => {
 
   // Обработчик отправки OTP
   const handleSendOtp = () => {
+    if (!consents.terms || !consents.privacy) {
+      toast.error('Примите обязательные документы и согласие на обработку данных');
+      return;
+    }
     if (!phoneNumber || phoneNumber.length < 10) {
       toast.error('Введите корректный номер телефона');
       return;
@@ -179,7 +196,8 @@ const RegistrationForm = () => {
         phone_number: normalizeRussianPhone(phoneNumber),
         name: name,
         email: email || `${phoneNumber.replace(/\D/g, '')}@phone.auth`,
-        permission: permissionValue, // Передаем строку 'store_owner'
+      permission: permissionValue, // Передаем строку 'store_owner'
+      ...consentPayload,
       },
       {
         onSuccess: (data) => {
@@ -302,6 +320,7 @@ const RegistrationForm = () => {
               >
                 {isSendingOtp ? 'Получаем номер...' : 'Получить номер для звонка'}
               </Button>
+              <RegistrationConsents {...consents} onChange={(field, value) => setConsents((current) => ({ ...current, [field]: value }))} />
             </>
           ) : (
             <>
@@ -371,6 +390,7 @@ const RegistrationForm = () => {
             variant="outline"
             className="mb-4"
           />
+          <RegistrationConsents {...consents} onChange={(field, value) => setConsents((current) => ({ ...current, [field]: value }))} />
           <Button className="w-full !bg-violet-700 !text-white hover:!bg-violet-800" loading={loading} disabled={loading}>
             {t('form:text-register')}
           </Button>

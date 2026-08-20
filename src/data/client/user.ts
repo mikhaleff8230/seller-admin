@@ -104,7 +104,7 @@ export const userClient = {
   verifyOtpCode: (variables: { phone_number: string; otp_id: string; code: string }) => {
     return HttpClient.post<AuthResponse>(API_ENDPOINTS.VERIFY_OTP_CODE, variables);
   },
-  otpLogin: (variables: OtpLoginInput) => {
+  otpLogin: (variables: OtpLoginInput & { accept_terms?: boolean; accept_privacy?: boolean; marketing_email_consent?: boolean; marketing_push_consent?: boolean }) => {
     return HttpClient.post<AuthResponse>(API_ENDPOINTS.OTP_LOGIN, variables);
   },
   verifyPinCode: (variables: PinLoginInput) => {

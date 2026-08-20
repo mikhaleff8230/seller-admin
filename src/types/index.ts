@@ -1458,12 +1458,16 @@ export interface ContactDetailsInput {
   website?: string;
 }
 
-export interface RegisterInput {
+  export interface RegisterInput {
   email: string;
   password: string;
   name: string;
   shop_id?: number;
-  permission: Permission;
+    permission: Permission;
+    accept_terms: boolean;
+    accept_privacy: boolean;
+    marketing_email_consent?: boolean;
+    marketing_push_consent?: boolean;
 }
 
 export interface ChangePasswordInput {
