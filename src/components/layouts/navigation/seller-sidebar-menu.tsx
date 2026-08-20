@@ -44,19 +44,18 @@ export default function SellerSidebarMenu() {
     || shops[0];
   const shopSlug = selectedShop?.slug;
   const promotionHref = selectedShop ? `${Routes.promotion}?shop_id=${selectedShop.id}` : Routes.promotion;
+  const shopHref = (path = '') => shopSlug ? `/${shopSlug}${path}` : Routes.dashboard;
   const items = [
     { href: Routes.dashboard, label: 'Мои магазины', icon: 'MyShopIcon' },
     { href: promotionHref, activeHref: Routes.promotion, label: 'Продвижение', icon: 'DashboardIcon' },
     { href: Routes.paymentProfiles, label: 'Платёжные профили СБП', icon: 'TaxesIcon' },
-    ...(shopSlug ? [
-      { href: `/${shopSlug}`, label: 'Панель продавца', icon: 'DashboardIcon' },
-      { href: `/${shopSlug}${Routes.product.list}`, label: 'Товары', icon: 'ProductsIcon' },
-      { href: `/${shopSlug}${Routes.order.list}`, label: 'Заказы', icon: 'OrdersIcon' },
-      { href: `/${shopSlug}${Routes.reviews.list}`, label: 'Отзывы', icon: 'ReviewIcon' },
-      { href: `/${shopSlug}${Routes.question.list}`, label: 'Сообщения', icon: 'QuestionIcon' },
-      { href: `/${shopSlug}/billing`, label: 'Баланс и платежи', icon: 'TaxesIcon' },
-      { href: `/${shopSlug}${Routes.staff.list}`, label: 'Менеджеры', icon: 'UsersIcon' },
-    ] : []),
+    { href: shopHref(), label: 'Панель продавца', icon: 'DashboardIcon', requiresShop: true },
+    { href: shopHref(Routes.product.list), label: 'Товары', icon: 'ProductsIcon', requiresShop: true },
+    { href: shopHref(Routes.order.list), label: 'Заказы', icon: 'OrdersIcon', requiresShop: true },
+    { href: shopHref(Routes.reviews.list), label: 'Отзывы', icon: 'ReviewIcon', requiresShop: true },
+    { href: shopHref(Routes.question.list), label: 'Сообщения', icon: 'QuestionIcon', requiresShop: true },
+    { href: shopHref('/billing'), label: 'Баланс и платежи', icon: 'TaxesIcon', requiresShop: true },
+    { href: shopHref(Routes.staff.list), label: 'Менеджеры', icon: 'UsersIcon', requiresShop: true },
     { href: Routes.xmlImport.list, label: 'Импорт XML / CSV', icon: 'ImportIcon' },
   ];
 
@@ -67,17 +66,20 @@ export default function SellerSidebarMenu() {
       </div>
       <div className="space-y-0.5">
         {items.map((item) => {
+          const unavailable = item.requiresShop && !shopSlug;
           const activePath = item.activeHref || item.href;
-          const active = activePath === '/'
+          const active = !unavailable && (activePath === '/'
             ? router.pathname === '/'
-            : router.pathname.startsWith(activePath.split('?')[0]);
+            : router.pathname.startsWith(activePath.split('?')[0]));
           return (
             <Link
               key={item.href}
               href={item.href}
+              title={unavailable ? 'Сначала создайте или привяжите магазин' : undefined}
               className={cn(
                 'flex items-center rounded-lg px-2.5 py-1.5 text-sm font-medium leading-5 transition-colors',
-                active ? 'bg-[#232323] text-white' : 'text-body-dark hover:bg-gray-100'
+                active ? 'bg-[#232323] text-white' : 'text-body-dark hover:bg-gray-100',
+                unavailable && 'opacity-60'
               )}
             >
               {getIcon({
