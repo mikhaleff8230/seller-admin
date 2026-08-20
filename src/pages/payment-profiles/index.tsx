@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
-import Layout from '@/components/layouts/admin';
+import Layout from '@/components/layouts/app';
 import Card from '@/components/common/card';
 import Button from '@/components/ui/button';
 import { HttpClient } from '@/data/client/http-client';
