@@ -3,6 +3,7 @@ import OwnerInformation from '@/components/user/user-details';
 import MobileNavigation from '@/components/layouts/navigation/mobile-navigation';
 import { useRouter } from 'next/router';
 import ImpersonationBanner from '@/components/auth/impersonation-banner';
+import WebPushPrompt from '@/components/notifications/web-push-prompt';
 
 const OwnerLayout: React.FC<{ children?: React.ReactNode }> = ({
   children,
@@ -15,6 +16,7 @@ const OwnerLayout: React.FC<{ children?: React.ReactNode }> = ({
       dir={dir}
     >
       <ImpersonationBanner />
+      <WebPushPrompt />
       <Navbar />
       <MobileNavigation>
         <OwnerInformation />

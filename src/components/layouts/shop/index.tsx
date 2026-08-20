@@ -2,6 +2,7 @@ import { useRouter } from 'next/router';
 import Navbar from '@/components/layouts/navigation/top-navbar';
 import MobileNavigation from '@/components/layouts/navigation/mobile-navigation';
 import OwnerInformation from '@/components/user/user-details';
+import WebPushPrompt from '@/components/notifications/web-push-prompt';
 
 const ShopLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const {
@@ -16,6 +17,7 @@ const ShopLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       dir={dir}
     >
       <Navbar />
+      <WebPushPrompt />
       <MobileNavigation>
         <OwnerInformation />
       </MobileNavigation>
