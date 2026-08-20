@@ -21,6 +21,7 @@ import { useRouter } from 'next/router';
 import { toast } from 'react-toastify';
 import { Routes } from '@/config/routes';
 import VirtualDepositBalanceModal from '@/components/billing/virtual-deposit-balance-modal';
+import ManualEmailAction from '@/components/user/manual-email-action';
 
 type IProps = {
   customers: User[] | undefined;
@@ -230,7 +231,10 @@ const CustomerList = ({
         const showVirtualDeposit = isSuperAdmin && isStoreOwner;
 
         return (
-          <>
+          <div className="flex items-center justify-end gap-3">
+            {isSuperAdmin && isStoreOwner && (
+              <ManualEmailAction userId={id} email={record?.email} />
+            )}
             {data?.id != id && (
               <ActionButtons
                 id={id}
@@ -244,7 +248,7 @@ const CustomerList = ({
                 onVirtualDeposit={(sellerId) => handleVirtualDeposit(sellerId, record?.name)}
               />
             )}
-          </>
+          </div>
         );
       },
     },

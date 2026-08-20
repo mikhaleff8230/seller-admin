@@ -22,6 +22,12 @@ import { API_ENDPOINTS } from './api-endpoints';
 import { HttpClient } from './http-client';
 
 export const userClient = {
+  fetchManualEmailTemplates: () => {
+    return HttpClient.get<{ data: Array<{ key: string; title: string; description: string }> }>('email/manual-templates');
+  },
+  sendManualEmailTemplate: ({ userId, template }: { userId: string; template: string }) => {
+    return HttpClient.post<{ success: boolean; message: string }>(`email/users/${userId}/send-template`, { template });
+  },
   impersonate: (id: string) => {
     return HttpClient.post<AuthResponse & {
       impersonated_user: { id: string; name: string; email: string };
