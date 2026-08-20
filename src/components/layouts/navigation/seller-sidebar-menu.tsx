@@ -73,7 +73,7 @@ export default function SellerSidebarMenu() {
             : router.pathname.startsWith(activePath.split('?')[0]));
           return (
             <Link
-              key={item.href}
+              key={item.label}
               href={item.href}
               title={unavailable ? 'Сначала создайте или привяжите магазин' : undefined}
               className={cn(
