@@ -37,6 +37,7 @@ export const Routes = {
   yandexDirect: '/integrations/yandex-direct',
   paymentProfiles: '/payment-profiles',
   promotion: '/promotion',
+  chat: '/chat',
   storeSettings: '/vendor/settings',
   storeKeepers: '/vendor/store_keepers',
   profileUpdate: '/profile-update',

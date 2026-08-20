@@ -17,6 +17,9 @@ import { useSellerBalanceQuery } from '@/data/seller-balance';
 import { WalletIcon } from '@/components/icons/wallet-icon';
 import DepositBalanceModal from '@/components/billing/deposit-balance-modal';
 import { useState } from 'react';
+import { useQuery } from 'react-query';
+import { HttpClient } from '@/data/client/http-client';
+import { ChatIcon } from '@/components/icons/sidebar/chat';
 
 const Navbar = () => {
 	const { t } = useTranslation();
@@ -25,6 +28,15 @@ const Navbar = () => {
 	const { permissions } = getAuthCredentials();
   const { balance, isLoading: isBalanceLoading } = useSellerBalanceQuery();
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const { data: chatData } = useQuery(
+    ['chat-conversations', 'navbar'],
+    () => HttpClient.get<any>('/chat/conversations'),
+    { refetchInterval: 30000 }
+  );
+  const conversations = chatData?.data || chatData?.conversations || [];
+  const unreadMessages = Array.isArray(conversations)
+    ? conversations.reduce((total: number, conversation: any) => total + Number(conversation?.unseen || 0), 0)
+    : 0;
 
   const { enableMultiLang } = Config;
 
@@ -45,6 +57,20 @@ const Navbar = () => {
         </div>
 
         <div className="space-s-8 flex items-center">
+          {hasAccess(adminAndOwnerOnly, permissions) && (
+            <a
+              href={Routes.chat}
+              aria-label={unreadMessages ? `Чат: ${unreadMessages} непрочитанных` : 'Чат'}
+              className="relative ms-3 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-[#232323] transition hover:bg-gray-100 md:ms-5"
+            >
+              <ChatIcon className="h-5 w-5" />
+              {unreadMessages > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white">
+                  {unreadMessages > 99 ? '99+' : unreadMessages}
+                </span>
+              )}
+            </a>
+          )}
           {/* Отображение баланса */}
           {hasAccess(adminAndOwnerOnly, permissions) && (
             <button
