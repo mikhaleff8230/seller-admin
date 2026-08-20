@@ -47,8 +47,8 @@ const ShopLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       </MobileNavigation>
 
       <div className="flex flex-1 pt-20">
-        <aside className="xl:w-76 fixed bottom-0 hidden h-full w-72 overflow-y-auto bg-white px-4 pt-22 shadow ltr:left-0 ltr:right-auto rtl:right-0 rtl:left-auto lg:block">
-          <div className="flex flex-col space-y-6 py-3">
+        <aside className="seller-sidebar-scroll xl:w-76 fixed bottom-0 hidden h-full w-72 overflow-y-auto bg-white px-4 pt-20 shadow ltr:left-0 ltr:right-auto rtl:right-0 rtl:left-auto lg:block">
+          <div className="flex flex-col space-y-3 py-2">
             <SidebarItemMap />
           </div>
         </aside>

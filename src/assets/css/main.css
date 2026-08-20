@@ -280,3 +280,12 @@
 	}
 }
 @import './custom-plugins.css';
+
+.seller-sidebar-scroll {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+
+.seller-sidebar-scroll::-webkit-scrollbar {
+	display: none;
+}

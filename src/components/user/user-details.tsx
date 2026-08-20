@@ -14,8 +14,8 @@ const UserDetails: React.FC = () => {
   if (loading) return <Loader text={t('text-loading')} />;
 
   return (
-    <div className="flex h-full flex-col items-center p-5">
-      <div className="relative flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200">
+    <div className="flex h-full flex-col items-center px-3 py-2">
+      <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200">
         <Image
           src={data?.profile?.avatar?.thumbnail ?? '/avatar-placeholder.svg'}
           fill
@@ -23,10 +23,10 @@ const UserDetails: React.FC = () => {
           alt={data?.name ?? ''}
         />
       </div>
-      <h3 className="mt-4 text-lg font-semibold text-heading">{data?.name}</h3>
-      <p className="mt-1 text-sm text-muted">{data?.email}</p>
+      <h3 className="mt-2 text-base font-semibold text-heading">{data?.name}</h3>
+      <p className="mt-0.5 text-xs text-muted">{data?.email}</p>
       {!data?.profile ? (
-        <p className="mt-0.5 text-sm text-muted">
+        <p className="mt-0.5 text-xs text-muted">
           {t('text-add-your')}{' '}
           <Link href={Routes.profileUpdate} className="text-accent underline">
             {t('authorized-nav-item-profile')}
@@ -34,16 +34,16 @@ const UserDetails: React.FC = () => {
         </p>
       ) : (
         <>
-          <p className="mt-0.5 text-sm text-muted">{data?.profile.contact}</p>
+          <p className="mt-0.5 text-xs text-muted">{data?.profile.contact}</p>
         </>
       )}
-      <div className="mt-6 flex items-center justify-center rounded border border-gray-200 px-3 py-2 text-sm text-body-dark">
+      <div className="mt-3 flex items-center justify-center rounded border border-gray-200 px-2.5 py-1.5 text-xs text-body-dark">
         {data?.is_active ? (
           <CheckMarkFill width={16} className="text-accent me-2" />
         ) : (
           <CloseFillIcon width={16} className="text-red-500 me-2" />
         )}
-        {data?.is_active ? 'Enabled' : 'Disabled'}
+        {data?.is_active ? 'Активирован' : 'Отключён'}
       </div>
       <SellerSidebarMenu />
     </div>
