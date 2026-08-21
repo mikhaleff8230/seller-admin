@@ -423,6 +423,8 @@ export interface User {
   email: string;
   created_at: string;
   last_login_at?: string | null;
+  marketing_email_consent_at?: string | null;
+  marketing_push_consent_at?: string | null;
   updated_at: string;
   profile?: Profile;
   address: Address[];
@@ -434,6 +436,8 @@ export interface UpdateUser {
   name?: string;
   profile?: UserProfileInput;
   address?: UserAddressUpsertInput[];
+  marketing_email_consent?: boolean;
+  marketing_push_consent?: boolean;
 }
 
 export interface Profile {

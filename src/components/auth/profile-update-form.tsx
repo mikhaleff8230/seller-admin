@@ -17,6 +17,8 @@ import InnAutocomplete from '@/components/auth/inn-autocomplete';
 
 type FormValues = {
   name: string;
+  marketing_email_consent: boolean;
+  marketing_push_consent: boolean;
   profile: {
     id: string;
     bio: string;
@@ -86,11 +88,13 @@ export default function ProfileUpdate({ me }: any) {
           'profile.contract_accepted',
           'profile.contract_signed_at',
         ])),
+      marketing_email_consent: Boolean(me?.marketing_email_consent_at),
+      marketing_push_consent: Boolean(me?.marketing_push_consent_at),
     },
   });
 
   async function onSubmit(values: FormValues) {
-    const { name, profile } = values;
+    const { name, profile, marketing_email_consent, marketing_push_consent } = values;
     const { notifications } = profile;
     
     // Валидация обязательного поля market_role
@@ -105,6 +109,8 @@ export default function ProfileUpdate({ me }: any) {
       id: me?.id,
       input: {
         name: name,
+        marketing_email_consent,
+        marketing_push_consent,
         profile: {
           id: me?.profile?.id,
           bio: profileData?.bio,
@@ -472,6 +478,26 @@ export default function ProfileUpdate({ me }: any) {
               }
             }}
           />
+          <div className="mt-5 space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <h3 className="text-sm font-semibold text-heading">Уведомления и рассылки</h3>
+            <label className="flex cursor-pointer items-start gap-3 text-sm leading-6 text-body">
+              <input
+                type="checkbox"
+                {...register('marketing_email_consent')}
+                className="mt-1 h-4 w-4 shrink-0 accent-violet-700"
+              />
+              <span>Согласен(на) получать рекламные и информационные письма. Согласие можно отозвать.</span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-3 text-sm leading-6 text-body">
+              <input
+                type="checkbox"
+                {...register('marketing_push_consent')}
+                className="mt-1 h-4 w-4 shrink-0 accent-violet-700"
+              />
+              <span>Согласен(на) получать рекламные push-уведомления. Разрешение можно отключить в браузере.</span>
+            </label>
+            <p className="text-xs text-gray-500">Сервисные уведомления о заказах и безопасности отправляются независимо от рекламных подписок.</p>
+          </div>
           <div className="w-full text-end mt-5">
             <Button loading={loading} disabled={loading}>
               {t('form:button-label-save')}
