@@ -14,6 +14,7 @@ import SelectInput from '@/components/ui/select-input';
 import ContractViewer from '@/components/auth/contract-viewer';
 import { adminOnly, getAuthCredentials, hasAccess } from '@/utils/auth-utils';
 import InnAutocomplete from '@/components/auth/inn-autocomplete';
+import { toast } from 'react-toastify';
 
 type FormValues = {
   name: string;
@@ -97,11 +98,6 @@ export default function ProfileUpdate({ me }: any) {
     const { name, profile, marketing_email_consent, marketing_push_consent } = values;
     const { notifications } = profile;
     
-    // Валидация обязательного поля market_role
-    if (!profile?.market_role) {
-      return;
-    }
-    
     // Удаляем seller_id из данных обновления (генерируется автоматически и защищен от изменения)
     const { seller_id, ...profileData } = profile;
     
@@ -145,8 +141,13 @@ export default function ProfileUpdate({ me }: any) {
     updateUser({ ...input });
   }
 
+  function onInvalid() {
+    toast.error('Заполните обязательные поля. Выберите роль продавца в разделе «Кто вы?»');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit(onSubmit, onInvalid)}>
       {/* Секция "Кто вы?" - обязательное поле */}
       <div className="my-5 flex flex-wrap border-b border-dashed border-border-base pb-8 sm:my-8">
         <Description
@@ -447,7 +448,7 @@ export default function ProfileUpdate({ me }: any) {
           />
         </Card>
         <div className="w-full text-end">
-          <Button loading={loading} disabled={loading}>
+          <Button type="submit" loading={loading} disabled={loading}>
             {t('form:button-label-save')}
           </Button>
         </div>
@@ -499,7 +500,7 @@ export default function ProfileUpdate({ me }: any) {
             <p className="text-xs text-gray-500">Сервисные уведомления о заказах и безопасности отправляются независимо от рекламных подписок.</p>
           </div>
           <div className="w-full text-end mt-5">
-            <Button loading={loading} disabled={loading}>
+            <Button type="submit" loading={loading} disabled={loading}>
               {t('form:button-label-save')}
             </Button>
           </div>
@@ -515,7 +516,7 @@ export default function ProfileUpdate({ me }: any) {
             </p>
           </div>
           <div className="w-full text-end">
-            <Button loading={loading} disabled={loading} size="large">
+            <Button type="submit" loading={loading} disabled={loading} size="big">
               {t('form:button-label-save-all')}
             </Button>
           </div>

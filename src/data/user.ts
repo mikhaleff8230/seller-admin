@@ -112,6 +112,15 @@ export const useUpdateUserMutation = () => {
     onSuccess: () => {
       toast.success(t('common:successfully-updated'));
     },
+    onError: (error: any) => {
+      const responseData = error?.response?.data;
+      const validationMessage = responseData && typeof responseData === 'object'
+        ? Object.values(responseData).flat().find(Boolean)
+        : null;
+      toast.error(
+        String(validationMessage || responseData?.message || error?.message || 'Не удалось сохранить изменения')
+      );
+    },
     // Always refetch after error or success:
     onSettled: () => {
       queryClient.invalidateQueries(API_ENDPOINTS.ME);
