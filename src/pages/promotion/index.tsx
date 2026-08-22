@@ -44,6 +44,11 @@ export default function PromotionPage() {
   };
 
   useEffect(() => { if (router.isReady) load(); }, [router.isReady, shopId, search, page]);
+  useEffect(() => {
+    if (!router.isReady) return;
+    const interval = window.setInterval(load, 60_000);
+    return () => window.clearInterval(interval);
+  }, [router.isReady, shopId, search, page]);
   useEffect(() => { setSelected([]); }, [shopId, page]);
 
   const changeShop = (value: string) => {
@@ -90,14 +95,14 @@ export default function PromotionPage() {
     { title: 'Количество', dataIndex: 'quantity', key: 'quantity', width: 120, align: 'center', render: (quantity: any) => quantity ?? 0 },
     { title: 'Статус', dataIndex: 'status', key: 'status', width: 150, render: (status: string) => <Badge text={statusLabels[status] || status || '—'} color={status === 'publish' ? 'bg-[#232323] text-white' : status === 'draft' ? 'bg-yellow-400' : 'bg-gray-500 text-white'} /> },
     { title: 'Boost', dataIndex: 'boost_enabled', key: 'boost', width: 100, align: 'center', render: (_enabled: boolean, product: any) => <button type="button" aria-label="Переключить продвижение" disabled={busy === product.id} onClick={() => toggle(product)} className={`relative h-7 w-14 rounded-full transition-colors ${product.boost_enabled ? 'bg-[#232323]' : 'bg-gray-300'} disabled:opacity-50`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${product.boost_enabled ? 'left-8' : 'left-1'}`} /></button> },
-    { title: 'Просмотры', key: 'views', width: 110, align: 'center', render: (_: any, product: any) => product.promotion_stats?.views || 0 },
-    { title: 'Из рекламы', key: 'clicks', width: 120, align: 'center', render: (_: any, product: any) => product.promotion_stats?.yandex_clicks || 0 },
+    { title: 'Просмотры товара', key: 'views', width: 145, align: 'center', render: (_: any, product: any) => product.promotion_stats?.views || 0 },
+    { title: 'Переходы из Яндекса', key: 'clicks', width: 170, align: 'center', render: (_: any, product: any) => product.promotion_stats?.yandex_clicks || 0 },
   ];
 
   return <div className="space-y-6">
     <Card><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><h1 className="text-2xl font-bold">Продвижение товаров</h1><p className="mt-1 text-sm text-body">Товары показываются отдельно для выбранного магазина.</p></div><div className="w-full lg:w-96"><label className="mb-2 block text-sm font-semibold text-heading">Магазин</label><select value={shopId} onChange={(event) => changeShop(event.target.value)} className="h-12 w-full rounded border border-border-base bg-white px-4 text-sm outline-none focus:border-accent">{data.shops?.map((shop: any) => <option key={shop.id} value={shop.id}>{shop.name}</option>)}</select></div></div>
       <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-6"><Metric label="Баланс селлера" value={`${data.balance} ₽`} /><Metric label={`Активно${selectedShop ? ` · ${selectedShop.name}` : ''}`} value={data.active_products} /><Metric label="Потрачено селлером" value={`${data.spent} ₽`} /><Metric label="CTR" value={`${ctr}%`} /><Metric label="Показы рекламы" value={data.impressions} /><Metric label="Клики" value={data.clicks} /></div></Card>
-    <Card><Search onSearch={({ searchText }) => { setPage(1); setSearch(searchText); }} placeholderText="Поиск товара по названию" /></Card>
+    <Card><div className="mb-4 rounded border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-body"><b className="text-heading">Как считается статистика:</b> «Просмотры товара» — все открытия карточки на SANCAN, «Переходы из Яндекса» — уникальные рекламные переходы с меткой <code>yclid</code>. Общие показы, клики и расход Direct обновляются примерно каждые 15 минут; экран обновляет данные автоматически.</div><Search onSearch={({ searchText }) => { setPage(1); setSearch(searchText); }} placeholderText="Поиск товара по названию" /></Card>
     <Card className="p-0"><div className="flex flex-col gap-3 border-b border-border-base p-4 md:flex-row md:items-center md:justify-between"><div className="text-sm text-body">Выбрано: <b className="text-heading">{selected.length}</b> из {products.length} на странице</div><div className="flex flex-wrap justify-end gap-2"><Button variant="outline" size="small" onClick={() => setSelected(pageIds)} disabled={!products.length || bulkBusy}>Выбрать все</Button><Button variant="outline" size="small" onClick={() => setSelected([])} disabled={!selected.length || bulkBusy}>Снять выбор</Button><Button size="small" onClick={() => bulkToggle(true)} disabled={!selected.length || bulkBusy}>Включить Boost</Button><Button variant="outline" size="small" onClick={() => bulkToggle(false)} disabled={!selected.length || bulkBusy}>Выключить Boost</Button></div></div><div className="overflow-x-auto"><Table columns={columns} emptyText="В выбранном магазине товары не найдены" data={products} rowKey="id" scroll={{ x: 1300 }} /></div></Card>
     {!!data.products?.total && <div className="flex justify-end"><Pagination total={data.products.total} current={data.products.current_page} pageSize={data.products.per_page} onChange={(current) => setPage(current)} /></div>}
   </div>;

@@ -20,7 +20,7 @@ import { useMeQuery } from '@/data/user';
 import { toast } from 'react-toastify';
 import BalanceHeader from '@/components/billing/balance-header';
 import ProSubscriptionCard from '@/components/billing/pro-subscription-card';
-import { useCheckPendingDeposit, useSellerBalanceQuery } from '@/data/seller-balance';
+import { useBalanceLedgerQuery, useCheckPendingDeposit, useSellerBalanceQuery } from '@/data/seller-balance';
 import { useProSubscriptionStatusQuery } from '@/data/pro-subscription';
 
 // Format date helper
@@ -31,6 +31,18 @@ const formatDate = (dateString: string) => {
     month: '2-digit',
     day: '2-digit',
   });
+};
+
+const formatDateTime = (dateString: string) => new Date(dateString).toLocaleString('ru-RU', {
+  year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+});
+
+const operationLabels: Record<string, string> = {
+  balance_deposit: 'Пополнение',
+  yandex_promotion: 'Реклама Яндекс Директ',
+  ai_service: 'AI-сервис',
+  order_credit: 'Зачисление по сделке',
+  order_debit: 'Списание по сделке',
 };
 
 export default function ShopBillingPage() {
@@ -59,6 +71,7 @@ export default function ShopBillingPage() {
   );
 
   const { refetch: refetchBalance } = useSellerBalanceQuery();
+  const { entries: balanceEntries, isLoading: ledgerLoading, refetch: refetchLedger } = useBalanceLedgerQuery();
   const checkPendingMutation = useCheckPendingDeposit();
   const { refetch: refetchSubscription } = useProSubscriptionStatusQuery();
 
@@ -70,6 +83,7 @@ export default function ShopBillingPage() {
       checkPendingMutation.mutate(undefined, {
         onSuccess: () => {
           refetchBalance();
+          refetchLedger();
         }
       });
 
@@ -240,7 +254,23 @@ export default function ShopBillingPage() {
       {/* Подписка PRO */}
       <ProSubscriptionCard sellerId={isSuperAdmin && ownerId ? ownerId : undefined} />
 
+      <Card className="mb-8">
+        <div className="mb-5 flex items-center justify-between">
+          <div><h2 className="text-lg font-semibold text-heading">Операции по балансу</h2><p className="mt-1 text-sm text-body">Все успешные пополнения и списания, включая расходы на рекламу.</p></div>
+          <Button variant="outline" size="small" onClick={() => { refetchBalance(); refetchLedger(); }}>Обновить</Button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-800"><tr><th className="px-4 py-3 text-left text-sm font-semibold text-heading">Дата</th><th className="px-4 py-3 text-left text-sm font-semibold text-heading">Операция</th><th className="px-4 py-3 text-left text-sm font-semibold text-heading">Описание</th><th className="px-4 py-3 text-right text-sm font-semibold text-heading">Сумма</th><th className="px-4 py-3 text-right text-sm font-semibold text-heading">Баланс после</th></tr></thead>
+            <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
+              {ledgerLoading ? <tr><td colSpan={5} className="px-4 py-5 text-center text-sm text-body">Загрузка операций…</td></tr> : balanceEntries.length === 0 ? <tr><td colSpan={5} className="px-4 py-5 text-center text-sm text-body">Операций пока нет</td></tr> : balanceEntries.map((entry) => <tr key={entry.id}><td className="whitespace-nowrap px-4 py-4 text-sm text-body">{formatDateTime(entry.created_at)}</td><td className="whitespace-nowrap px-4 py-4 text-sm font-medium text-heading">{operationLabels[entry.type] || entry.type}</td><td className="px-4 py-4 text-sm text-body">{entry.description}</td><td className={`whitespace-nowrap px-4 py-4 text-right text-sm font-semibold ${entry.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>{entry.amount > 0 ? '+' : ''}{Number(entry.amount).toFixed(2)} ₽</td><td className="whitespace-nowrap px-4 py-4 text-right text-sm text-heading">{entry.balance_after == null ? '—' : `${Number(entry.balance_after).toFixed(2)} ₽`}</td></tr>)}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
       <Card>
+        <h2 className="mb-5 text-lg font-semibold text-heading">Счета</h2>
         <div className="overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-800">
@@ -327,4 +357,3 @@ export const getServerSideProps = async ({ locale }: any) => ({
     ...(await serverSideTranslations(locale, ['form', 'common', 'table'])),
   },
 });
-

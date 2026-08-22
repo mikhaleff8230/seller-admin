@@ -14,6 +14,21 @@ export interface BalanceResponse {
   data: SellerBalance;
 }
 
+export interface BalanceLedgerItem {
+  id: string;
+  type: string;
+  amount: number;
+  balance_before: number | null;
+  balance_after: number | null;
+  description: string;
+  created_at: string;
+}
+
+export interface BalanceLedgerResponse {
+  success: boolean;
+  data: BalanceLedgerItem[];
+}
+
 export interface DepositRequest {
   amount: number;
   payment_method: 'yookassa';
@@ -38,11 +53,30 @@ export const useSellerBalanceQuery = () => {
     () => HttpClient.get<BalanceResponse>(`/api/seller/balance`),
     {
       retry: 1,
+      refetchInterval: 60_000,
     }
   );
 
   return {
     balance: data?.data,
+    isLoading,
+    error,
+    refetch,
+  };
+};
+
+export const useBalanceLedgerQuery = () => {
+  const { data, error, isLoading, refetch } = useQuery<BalanceLedgerResponse, Error>(
+    ['seller-balance-ledger'],
+    () => HttpClient.get<BalanceLedgerResponse>('/api/seller/balance/ledger?limit=50'),
+    {
+      retry: 1,
+      refetchInterval: 60_000,
+    }
+  );
+
+  return {
+    entries: data?.data ?? [],
     isLoading,
     error,
     refetch,
