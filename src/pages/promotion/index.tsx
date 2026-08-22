@@ -28,10 +28,14 @@ export default function PromotionPage() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [period, setPeriod] = useState('today');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [intensityBusy, setIntensityBusy] = useState(false);
 
   const load = async () => {
     try {
-      const result = await HttpClient.get<any>('/api/seller/promotion', { shop_id: shopId || undefined, search: search || undefined, page, limit: 20 });
+      const result = await HttpClient.get<any>('/api/seller/promotion', { shop_id: shopId || undefined, search: search || undefined, page, limit: 20, period, date_from: period === 'custom' ? dateFrom : undefined, date_to: period === 'custom' ? dateTo : undefined });
       setData(result);
       if (!shopId && result.shops?.length) {
         const firstShopId = String(result.shops[0].id);
@@ -43,12 +47,12 @@ export default function PromotionPage() {
     }
   };
 
-  useEffect(() => { if (router.isReady) load(); }, [router.isReady, shopId, search, page]);
+  useEffect(() => { if (router.isReady && (period !== 'custom' || (dateFrom && dateTo))) load(); }, [router.isReady, shopId, search, page, period, dateFrom, dateTo]);
   useEffect(() => {
     if (!router.isReady) return;
     const interval = window.setInterval(load, 60_000);
     return () => window.clearInterval(interval);
-  }, [router.isReady, shopId, search, page]);
+  }, [router.isReady, shopId, search, page, period, dateFrom, dateTo]);
   useEffect(() => { setSelected([]); }, [shopId, page]);
 
   const changeShop = (value: string) => {
@@ -80,6 +84,13 @@ export default function PromotionPage() {
     } finally { setBulkBusy(false); }
   };
 
+  const changeIntensity = async (level: number) => {
+    setIntensityBusy(true);
+    try { await HttpClient.patch('/api/seller/advertising/intensity', { bid_level: level }); toast.success('Интенсивность сохранена'); await load(); }
+    catch (error: any) { toast.error(error?.response?.data?.message || 'Не удалось изменить интенсивность'); }
+    finally { setIntensityBusy(false); }
+  };
+
   if (!data) return <div className="p-8">Загрузка…</div>;
   const products = data.products?.data || [];
   const ctr = data.impressions ? ((data.clicks / data.impressions) * 100).toFixed(2) : '0.00';
@@ -101,7 +112,9 @@ export default function PromotionPage() {
 
   return <div className="space-y-6">
     <Card><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><h1 className="text-2xl font-bold">Продвижение товаров</h1><p className="mt-1 text-sm text-body">Товары показываются отдельно для выбранного магазина.</p></div><div className="w-full lg:w-96"><label className="mb-2 block text-sm font-semibold text-heading">Магазин</label><select value={shopId} onChange={(event) => changeShop(event.target.value)} className="h-12 w-full rounded border border-border-base bg-white px-4 text-sm outline-none focus:border-accent">{data.shops?.map((shop: any) => <option key={shop.id} value={shop.id}>{shop.name}</option>)}</select></div></div>
+      <div className="mt-5 flex flex-wrap items-center gap-2"><span className="mr-2 text-sm font-semibold text-heading">Период:</span>{[['today','Сегодня'],['yesterday','Вчера'],['7d','7 дней'],['30d','30 дней'],['custom','Интервал']].map(([key,label])=><button key={key} type="button" onClick={()=>{setPeriod(key);setPage(1)}} className={`rounded-full px-4 py-2 text-sm font-semibold ${period===key?'bg-accent text-white':'bg-gray-100 text-heading'}`}>{label}</button>)}{period==='custom'&&<><input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} className="rounded border p-2 text-sm"/><span>—</span><input type="date" value={dateTo} min={dateFrom} onChange={e=>setDateTo(e.target.value)} className="rounded border p-2 text-sm"/></>}</div>
       <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-6"><Metric label="Баланс селлера" value={`${data.balance} ₽`} /><Metric label={`Активно${selectedShop ? ` · ${selectedShop.name}` : ''}`} value={data.active_products} /><Metric label="Потрачено селлером" value={`${data.spent} ₽`} /><Metric label="CTR" value={`${ctr}%`} /><Metric label="Показы рекламы" value={data.impressions} /><Metric label="Клики" value={data.clicks} /></div></Card>
+    <Card><h2 className="text-lg font-bold text-heading">Интенсивность продвижения</h2><p className="mt-2 text-sm text-body">Чем выше уровень, тем больше потенциальный охват и тем быстрее может расходоваться баланс. Фактическая стоимость перехода зависит от рекламного аукциона и может быть ниже выбранного уровня.</p><div className="mt-5 grid grid-cols-3 gap-2 sm:grid-cols-6">{(data.intensity?.allowed_levels||[]).map((level:number)=><button key={level} type="button" disabled={intensityBusy} onClick={()=>changeIntensity(level)} className={`rounded-xl border-2 px-3 py-4 text-center transition ${Number(data.intensity?.bid_level)===Number(level)?'border-accent bg-accent text-white':'border-gray-200 bg-white text-heading hover:border-accent'}`}><span className="block text-lg font-bold">{level} ₽</span><span className="mt-1 block text-xs">{Number(level)===Number(data.intensity?.default_level)?'Рекомендуем':'до уровня'}</span></button>)}</div></Card>
     <Card><div className="mb-4 rounded border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-body"><b className="text-heading">Как считается статистика:</b> «Просмотры товара» — все открытия карточки на SANCAN, «Переходы из Яндекса» — уникальные рекламные переходы с меткой <code>yclid</code>. Общие показы, клики и расход Direct обновляются примерно каждые 15 минут; экран обновляет данные автоматически.</div><Search onSearch={({ searchText }) => { setPage(1); setSearch(searchText); }} placeholderText="Поиск товара по названию" /></Card>
     <Card className="p-0"><div className="flex flex-col gap-3 border-b border-border-base p-4 md:flex-row md:items-center md:justify-between"><div className="text-sm text-body">Выбрано: <b className="text-heading">{selected.length}</b> из {products.length} на странице</div><div className="flex flex-wrap justify-end gap-2"><Button variant="outline" size="small" onClick={() => setSelected(pageIds)} disabled={!products.length || bulkBusy}>Выбрать все</Button><Button variant="outline" size="small" onClick={() => setSelected([])} disabled={!selected.length || bulkBusy}>Снять выбор</Button><Button size="small" onClick={() => bulkToggle(true)} disabled={!selected.length || bulkBusy}>Включить Boost</Button><Button variant="outline" size="small" onClick={() => bulkToggle(false)} disabled={!selected.length || bulkBusy}>Выключить Boost</Button></div></div><div className="overflow-x-auto"><Table columns={columns} emptyText="В выбранном магазине товары не найдены" data={products} rowKey="id" scroll={{ x: 1300 }} /></div></Card>
     {!!data.products?.total && <div className="flex justify-end"><Pagination total={data.products.total} current={data.products.current_page} pageSize={data.products.per_page} onChange={(current) => setPage(current)} /></div>}
