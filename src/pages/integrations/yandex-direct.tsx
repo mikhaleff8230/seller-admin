@@ -12,7 +12,7 @@ const defaults: Settings = {enabled:false,oauth_token:'',oauth_token_configured:
 
 export default function YandexDirectPage(){
  const [settings,setSettings]=useState<Settings>(defaults); const [monitor,setMonitor]=useState<any>({}); const [errors,setErrors]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [busy,setBusy]=useState(false); const [check,setCheck]=useState<any>(null);
- const load=()=>HttpClient.get<any>('/api/admin/yandex-direct').then(d=>{setSettings({...defaults,...d.settings,oauth_token:''});setMonitor(d.monitor||{});setErrors(d.errors||[]);}).catch((e:any)=>toast.error(e?.response?.data?.message||'Не удалось загрузить настройки')).finally(()=>setLoading(false));
+ const load=()=>HttpClient.get<any>('/api/admin/yandex-direct').then(d=>{const loaded=d.settings||{};setSettings({...defaults,...loaded,allowed_bid_levels:Array.isArray(loaded.allowed_bid_levels)&&loaded.allowed_bid_levels.length?loaded.allowed_bid_levels:defaults.allowed_bid_levels,oauth_token:''});setMonitor(d.monitor||{});setErrors(d.errors||[]);}).catch((e:any)=>toast.error(e?.response?.data?.message||'Не удалось загрузить настройки')).finally(()=>setLoading(false));
  useEffect(()=>{load()},[]);
  const field=(key:keyof Settings,value:any)=>setSettings(s=>({...s,[key]:value}));
  const save=async()=>{setBusy(true);try{await HttpClient.put('/api/admin/yandex-direct',{...settings,campaign_id:Number(settings.campaign_id),feed_id:Number(settings.feed_id),markup_percent:Number(settings.markup_percent),balance_reserve:Number(settings.balance_reserve)});toast.success('Настройки сохранены');load();}catch(e:any){toast.error(e?.response?.data?.message||'Настройки не сохранены')}finally{setBusy(false)}};
