@@ -10,7 +10,7 @@ import { toast } from 'react-toastify';
 
 type Banner = {
   id: number;
-  kind: 'hero' | 'strip';
+  kind: 'hero' | 'strip' | 'mobile';
   is_active: boolean;
   sort_order: number;
   content: Record<string, any>;
@@ -110,7 +110,7 @@ export default function BannersPage() {
                     {b.content.title || b.content.text || `Баннер ${b.id}`}
                   </td>
                   <td className="p-4">
-                    {b.kind === 'hero' ? 'Большой баннер' : 'Промо-полоса'}
+                    {b.kind === 'hero' ? 'Большой баннер' : b.kind === 'mobile' ? 'Мобильный баннер' : 'Промо-полоса'}
                   </td>
                   <td className="p-4">{b.sort_order}</td>
                   <td className="p-4">

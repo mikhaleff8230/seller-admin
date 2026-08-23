@@ -7,7 +7,7 @@ import { HttpClient } from '@/data/client/http-client';
 import { adminOnly } from '@/utils/auth-utils';
 import { toast } from 'react-toastify';
 
-type Kind = 'hero' | 'strip';
+type Kind = 'hero' | 'strip' | 'mobile';
 const defaults: Record<Kind, Record<string, any>> = {
   hero: {
     background_type: 'color',
@@ -49,6 +49,10 @@ const defaults: Record<Kind, Record<string, any>> = {
     button_color: '#ffffff',
     button_background: '#0b2548',
   },
+  mobile: {
+    background_type: 'image', background_color: '#6d38e0', gradient_from: '#8c52ff', gradient_to: '#342080', gradient_angle: 135,
+    title: 'Цены напрямую от продавцов', title_color: '#ffffff', cta_text: 'Выгода до 70%', cta_url: '/explore', cta_color: '#ffffff', cta_background: '#24143f',
+  },
 };
 const textFields: Record<Kind, Array<[string, string]>> = {
   hero: [
@@ -68,6 +72,7 @@ const textFields: Record<Kind, Array<[string, string]>> = {
     ['button_text', 'Текст кнопки'],
     ['button_url', 'Ссылка кнопки'],
   ],
+  mobile: [['title', 'Заголовок'], ['cta_text', 'Текст CTA'], ['cta_url', 'Ссылка CTA']],
 };
 const colorFields: Record<Kind, Array<[string, string]>> = {
   hero: [
@@ -93,6 +98,7 @@ const colorFields: Record<Kind, Array<[string, string]>> = {
     ['button_background', 'Фон кнопки'],
     ['button_color', 'Текст кнопки'],
   ],
+  mobile: [['background_color', 'Цвет фона'], ['gradient_from', 'Градиент: начало'], ['gradient_to', 'Градиент: конец'], ['title_color', 'Цвет заголовка'], ['cta_background', 'Фон CTA'], ['cta_color', 'Текст CTA']],
 };
 export default function BannerEditor() {
   const router = useRouter(),
@@ -182,6 +188,7 @@ export default function BannerEditor() {
             >
               <option value="hero">Большой баннер</option>
               <option value="strip">Промо-полоса</option>
+              <option value="mobile">Мобильный баннер</option>
             </select>
           </label>
           <label className="font-semibold">
@@ -218,10 +225,10 @@ export default function BannerEditor() {
               >
                 <option value="color">Сплошной цвет</option>
                 <option value="gradient">Градиент</option>
-                {kind === 'hero' && <option value="image">Изображение</option>}
+                {kind !== 'strip' && <option value="image">Изображение</option>}
               </select>
             </label>
-            {kind === 'hero' && content.background_type === 'image' && (
+            {kind !== 'strip' && content.background_type === 'image' && (
               <label className="block font-semibold">
                 Изображение
                 <input
