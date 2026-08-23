@@ -10,7 +10,7 @@ export interface BillingSettings {
   auto_generation: boolean;
   generation_day: number;
   days_before_overdue: number;
-  overdue_action: 'hide_products' | 'block_adding';
+  overdue_action: 'none';
 }
 
 export interface BillingSettingsResponse {

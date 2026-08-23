@@ -24,7 +24,7 @@ export default function BillingSettingsPage() {
     auto_generation: true,
     generation_day: 1,
     days_before_overdue: 7,
-    overdue_action: 'hide_products' as 'hide_products' | 'block_adding',
+    overdue_action: 'none' as 'none',
   });
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export default function BillingSettingsPage() {
         auto_generation: settings.auto_generation ?? true,
         generation_day: settings.generation_day || 1,
         days_before_overdue: settings.days_before_overdue || 7,
-        overdue_action: settings.overdue_action || 'hide_products',
+        overdue_action: 'none',
       });
     }
   }, [settings]);
@@ -152,13 +152,12 @@ export default function BillingSettingsPage() {
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    overdue_action: e.target.value as 'hide_products' | 'block_adding',
+                    overdue_action: 'none',
                   })
                 }
                 className="mt-2"
               >
-                <option value="hide_products">Скрыть товары</option>
-                <option value="block_adding">Заблокировать добавление</option>
+                <option value="none">Не менять товары</option>
               </Select>
             </div>
 
