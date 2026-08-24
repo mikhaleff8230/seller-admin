@@ -21,6 +21,7 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [type, setType] = useState('');
   const [category, setCategory] = useState('');
+  const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const { t } = useTranslation();
   const { locale } = useRouter();
@@ -41,6 +42,7 @@ export default function ProductsPage() {
     page,
     type,
     categories: category,
+    status: status || undefined,
     name: searchTerm,
     orderBy,
     sortedBy,
@@ -166,6 +168,18 @@ export default function ProductsPage() {
                 />
               </div>
               <div className="flex items-center space-x-2">
+                <select
+                  value={status}
+                  onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+                  className="h-10 rounded border-gray-300 text-sm focus:border-accent focus:ring-accent"
+                  aria-label="Статус товара"
+                >
+                  <option value="">Все статусы</option>
+                  <option value="publish">Опубликованные</option>
+                  <option value="draft">Черновики</option>
+                  <option value="under_review">На проверке</option>
+                  <option value="unpublish">Не опубликованные</option>
+                </select>
                 <label className="text-sm text-gray-600 whitespace-nowrap">
                   {t('common:text-per-page')}:
                 </label>

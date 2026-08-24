@@ -51,6 +51,7 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [type, setType] = useState('');
   const [category, setCategory] = useState('');
+  const [status, setStatus] = useState('');
   const [productType, setProductType] = useState<string>('');
   const [groupKey, setGroupKey] = useState<string>('');
   const [showOnlyMainProducts, setShowOnlyMainProducts] = useState<boolean>(false);
@@ -85,6 +86,7 @@ export default function ProductsPage() {
       shop_id: shopId,
       type,
       categories: category,
+      status: status || undefined,
       product_type: productType,
       group_key: groupKey || undefined,
       orderBy,
@@ -333,10 +335,26 @@ export default function ProductsPage() {
 
         {/* Поисковая строка во втором ряду */}
         <div className="mt-4 w-full">
-          <Search
-            onSearch={handleSearch}
-            placeholderText={t('form:input-placeholder-search-name')}
-          />
+          <div className="flex flex-col gap-3 md:flex-row">
+            <div className="min-w-0 flex-1">
+              <Search
+                onSearch={handleSearch}
+                placeholderText={t('form:input-placeholder-search-name')}
+              />
+            </div>
+            <select
+              value={status}
+              onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+              className="h-12 rounded border-gray-300 bg-white px-4 text-sm focus:border-accent focus:ring-accent md:w-56"
+              aria-label="Статус товара"
+            >
+              <option value="">Все статусы</option>
+              <option value="publish">Опубликованные</option>
+              <option value="draft">Черновики</option>
+              <option value="under_review">На проверке</option>
+              <option value="unpublish">Не опубликованные</option>
+            </select>
+          </div>
         </div>
 
         <div className="flex w-full">
