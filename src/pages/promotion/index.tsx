@@ -36,7 +36,7 @@ export default function PromotionPage() {
 
   const load = async () => {
     try {
-      const result = await HttpClient.get<any>('/api/seller/promotion', { shop_id: shopId || undefined, search: search || undefined, page, limit: 20, period, date_from: period === 'custom' ? dateFrom : undefined, date_to: period === 'custom' ? dateTo : undefined });
+      const result = await HttpClient.get<any>('/api/seller/promotion', { shop_id: shopId || undefined, search: search || undefined, page, limit: 20, period, date_from: period === 'custom' ? dateFrom : undefined, date_to: period === 'custom' ? dateTo : undefined, cache_bust: Date.now() });
       setData(result);
       const levels = result.intensity?.allowed_levels || [];
       const selectedIndex = levels.findIndex((level: number) => Number(level) === Number(result.intensity?.bid_level));

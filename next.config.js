@@ -1,5 +1,13 @@
 /** @type {import('next').NextConfig} */
-const runtimeCaching = require('next-pwa/cache');
+const defaultRuntimeCaching = require('next-pwa/cache');
+const runtimeCaching = [
+  {
+    urlPattern: /^https:\/\/api\.sancan\.ru\/api\/seller\/promotion(?:\?|$)/i,
+    handler: 'NetworkOnly',
+    method: 'GET',
+  },
+  ...defaultRuntimeCaching,
+];
 const { i18n } = require('./next-i18next.config');
 const withPWA = require('next-pwa')({
   disable: process.env.NODE_ENV === 'development',
