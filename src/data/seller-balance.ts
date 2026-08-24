@@ -66,9 +66,10 @@ export const useSellerBalanceQuery = () => {
 };
 
 export const useBalanceLedgerQuery = () => {
+  const timezoneOffset = -new Date().getTimezoneOffset();
   const { data, error, isLoading, refetch } = useQuery<BalanceLedgerResponse, Error>(
-    ['seller-balance-ledger'],
-    () => HttpClient.get<BalanceLedgerResponse>('/api/seller/balance/ledger?limit=50'),
+    ['seller-balance-ledger', timezoneOffset],
+    () => HttpClient.get<BalanceLedgerResponse>(`/api/seller/balance/ledger?limit=50&timezone_offset=${timezoneOffset}`),
     {
       retry: 1,
       refetchInterval: 60_000,
