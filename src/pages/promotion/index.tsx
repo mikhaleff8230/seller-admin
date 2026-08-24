@@ -31,12 +31,14 @@ export default function PromotionPage() {
   const [period, setPeriod] = useState('today');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [sortBy, setSortBy] = useState<'paid_visits' | 'organic_visits' | ''>('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [intensityBusy, setIntensityBusy] = useState(false);
   const [intensityIndex, setIntensityIndex] = useState(0);
 
   const load = async () => {
     try {
-      const result = await HttpClient.get<any>('/api/seller/promotion', { shop_id: shopId || undefined, search: search || undefined, page, limit: 20, period, date_from: period === 'custom' ? dateFrom : undefined, date_to: period === 'custom' ? dateTo : undefined, cache_bust: Date.now() });
+      const result = await HttpClient.get<any>('/api/seller/promotion', { shop_id: shopId || undefined, search: search || undefined, page, limit: 20, period, date_from: period === 'custom' ? dateFrom : undefined, date_to: period === 'custom' ? dateTo : undefined, sort_by: sortBy || undefined, sort_order: sortBy ? sortOrder : undefined, cache_bust: Date.now() });
       setData(result);
       const levels = result.intensity?.allowed_levels || [];
       const selectedIndex = levels.findIndex((level: number) => Number(level) === Number(result.intensity?.bid_level));
@@ -51,18 +53,34 @@ export default function PromotionPage() {
     }
   };
 
-  useEffect(() => { if (router.isReady && (period !== 'custom' || (dateFrom && dateTo))) load(); }, [router.isReady, shopId, search, page, period, dateFrom, dateTo]);
+  useEffect(() => { if (router.isReady && (period !== 'custom' || (dateFrom && dateTo))) load(); }, [router.isReady, shopId, search, page, period, dateFrom, dateTo, sortBy, sortOrder]);
   useEffect(() => {
     if (!router.isReady) return;
     const interval = window.setInterval(load, 60_000);
     return () => window.clearInterval(interval);
-  }, [router.isReady, shopId, search, page, period, dateFrom, dateTo]);
+  }, [router.isReady, shopId, search, page, period, dateFrom, dateTo, sortBy, sortOrder]);
   useEffect(() => { setSelected([]); }, [shopId, page]);
 
   const changeShop = (value: string) => {
     setPage(1); setShopId(value);
     router.replace({ pathname: router.pathname, query: { shop_id: value } }, undefined, { shallow: true });
   };
+
+  const changeSort = (field: 'paid_visits' | 'organic_visits') => {
+    setPage(1);
+    if (sortBy === field) {
+      setSortOrder((current) => current === 'desc' ? 'asc' : 'desc');
+      return;
+    }
+    setSortBy(field);
+    setSortOrder('desc');
+  };
+
+  const sortableTitle = (label: string, field: 'paid_visits' | 'organic_visits') => (
+    <button type="button" onClick={() => changeSort(field)} className="inline-flex items-center gap-1 whitespace-nowrap font-semibold hover:text-accent">
+      {label}<span aria-hidden="true" className={sortBy === field ? 'text-accent' : 'text-gray-400'}>{sortBy === field ? (sortOrder === 'desc' ? '↓' : '↑') : '↕'}</span>
+    </button>
+  );
 
   const toggle = async (product: any) => {
     setBusy(product.id);
@@ -108,13 +126,10 @@ export default function PromotionPage() {
     { title: <input type="checkbox" aria-label="Выбрать все товары на странице" checked={allPageSelected} onChange={(event) => setSelected(event.target.checked ? pageIds : [])} className="rounded border-gray-300 text-accent focus:ring-accent" />, key: 'select', width: 50, align: 'center', render: (_: any, product: any) => <input type="checkbox" aria-label={`Выбрать ${product.name}`} checked={selected.includes(String(product.id))} onChange={(event) => setSelected((current) => event.target.checked ? [...current, String(product.id)] : current.filter((id) => id !== String(product.id)))} className="rounded border-gray-300 text-accent focus:ring-accent" /> },
     { title: 'Фото', dataIndex: 'image', key: 'image', width: 80, render: (image: any, product: any) => <div className="relative h-[42px] w-[42px] overflow-hidden rounded"><Image src={image?.thumbnail || image?.original || siteSettings.product.placeholder} alt={product.name} fill sizes="42px" className="object-cover" /></div> },
     { title: 'Название', dataIndex: 'name', key: 'name', width: 330, ellipsis: true, render: (name: string, product: any) => <a href={`/${product.shop?.slug}/products/${product.slug}/edit`} className="font-medium text-body hover:text-accent" title={name}>{name}</a> },
-    { title: 'Тип товара', dataIndex: 'type', key: 'type', width: 150, render: (type: any) => type?.name || '—' },
-    { title: 'Цена', dataIndex: 'price', key: 'price', width: 130, render: (price: any) => `${Number(price || 0).toLocaleString('ru-RU')} ₽` },
-    { title: 'Количество', dataIndex: 'quantity', key: 'quantity', width: 120, align: 'center', render: (quantity: any) => quantity ?? 0 },
     { title: 'Статус', dataIndex: 'status', key: 'status', width: 150, render: (status: string) => <Badge text={statusLabels[status] || status || '—'} color={status === 'publish' ? 'bg-[#232323] text-white' : status === 'draft' ? 'bg-yellow-400' : 'bg-gray-500 text-white'} /> },
     { title: 'Boost', dataIndex: 'boost_enabled', key: 'boost', width: 100, align: 'center', render: (_enabled: boolean, product: any) => <button type="button" aria-label="Переключить продвижение" disabled={busy === product.id} onClick={() => toggle(product)} className={`relative h-7 w-14 rounded-full transition-colors ${product.boost_enabled ? 'bg-[#232323]' : 'bg-gray-300'} disabled:opacity-50`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${product.boost_enabled ? 'left-8' : 'left-1'}`} /></button> },
-    { title: 'Просмотры товара', key: 'views', width: 145, align: 'center', render: (_: any, product: any) => product.promotion_stats?.views || 0 },
-    { title: 'Переходы из Яндекса', key: 'clicks', width: 170, align: 'center', render: (_: any, product: any) => product.promotion_stats?.yandex_clicks || 0 },
+    { title: sortableTitle('Органические переходы', 'organic_visits'), key: 'organic_clicks', width: 190, align: 'center', render: (_: any, product: any) => product.promotion_stats?.organic_clicks ?? Math.max(Number(product.promotion_stats?.views || 0) - Number(product.promotion_stats?.yandex_clicks || 0), 0) },
+    { title: sortableTitle('Переходы из рекламы', 'paid_visits'), key: 'paid_clicks', width: 190, align: 'center', render: (_: any, product: any) => product.promotion_stats?.yandex_clicks || 0 },
   ];
 
   return <div className="space-y-6">
