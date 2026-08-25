@@ -13,7 +13,7 @@ export default function AuthorizedMenu() {
 
 	// Again, we're using framer-motion for the transition effect
 	return (
-		<Menu as="div" className="relative inline-block text-left">
+		<Menu as="div" className="relative inline-block shrink-0 text-left">
 			<Menu.Button className="flex items-center focus:outline-none">
 				<Avatar
 					src={

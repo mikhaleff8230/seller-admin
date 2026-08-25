@@ -42,7 +42,7 @@ const Navbar = () => {
 
   return (
     <header className="fixed z-40 w-full bg-white shadow">
-      <nav className="flex items-center justify-between px-5 py-4 md:px-8">
+      <nav className="flex items-center px-3 py-3 sm:px-5 sm:py-4 md:px-8">
         {/* <!-- Mobile menu button --> */}
         <motion.button
           whileTap={{ scale: 0.88 }}
@@ -56,12 +56,12 @@ const Navbar = () => {
           <Logo />
         </div>
 
-        <div className="space-s-8 flex items-center">
+        <div className="ms-auto flex min-w-0 items-center gap-2 sm:gap-3">
           {hasAccess(adminAndOwnerOnly, permissions) && (
             <a
               href={Routes.chat}
               aria-label={unreadMessages ? `Чат: ${unreadMessages} непрочитанных` : 'Чат'}
-              className="relative ms-3 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-[#232323] transition hover:bg-gray-100 md:ms-5"
+              className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-[#232323] transition hover:bg-gray-100"
             >
               <ChatIcon className="h-5 w-5" />
               {unreadMessages > 0 && (
@@ -75,7 +75,7 @@ const Navbar = () => {
           {hasAccess(adminAndOwnerOnly, permissions) && (
             <button
               onClick={() => setShowDepositModal(true)}
-              className="flex items-center gap-2 ms-4 md:ms-6 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+              className="flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 sm:px-3"
             >
               <WalletIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -88,15 +88,17 @@ const Navbar = () => {
             </button>
           )}
           {hasAccess(adminAndOwnerOnly, permissions) && (
-            <LinkButton
-              href={Routes.shop.create}
-              className="ms-4 md:ms-6"
-              size="small"
-            >
-              {t('common:text-create-shop')}
-            </LinkButton>
+            <div className="hidden md:block">
+              <LinkButton href={Routes.shop.create} size="small">
+                {t('common:text-create-shop')}
+              </LinkButton>
+            </div>
           )}
-          {enableMultiLang ? <LanguageSwitcher /> : null}
+          {enableMultiLang ? (
+            <div className="hidden lg:block">
+              <LanguageSwitcher />
+            </div>
+          ) : null}
           <AuthorizedMenu />
         </div>
       </nav>
