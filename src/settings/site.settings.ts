@@ -24,6 +24,12 @@ export const siteSettings = {
       labelTransKey: 'authorized-nav-item-profile',
     },
     {
+      href: 'https://t.me/sancan_seller/',
+      label: 'Чат Технической Поддержки',
+      icon: 'telegram',
+      external: true,
+    },
+    {
       href: Routes.logout,
       labelTransKey: 'authorized-nav-item-logout',
     },
