@@ -20,6 +20,7 @@ import {
 } from '@/types';
 import { API_ENDPOINTS } from './api-endpoints';
 import { HttpClient } from './http-client';
+import { captureSellerAttribution } from '@/lib/seller-attribution';
 
 export const userClient = {
   fetchManualEmailTemplates: () => {
@@ -43,7 +44,7 @@ export const userClient = {
     return HttpClient.post<any>(API_ENDPOINTS.LOGOUT, {});
   },
   register: (variables: RegisterInput) => {
-    return HttpClient.post<AuthResponse>(API_ENDPOINTS.REGISTER, variables);
+    return HttpClient.post<AuthResponse>(API_ENDPOINTS.REGISTER, { ...variables, attribution: captureSellerAttribution() });
   },
   update: ({ id, input }: { id: string; input: UpdateUser }) => {
     return HttpClient.put<User>(`${API_ENDPOINTS.USERS}/${id}`, input);
@@ -105,7 +106,7 @@ export const userClient = {
     return HttpClient.post<AuthResponse>(API_ENDPOINTS.VERIFY_OTP_CODE, variables);
   },
   otpLogin: (variables: OtpLoginInput & { accept_terms?: boolean; accept_privacy?: boolean; marketing_email_consent?: boolean; marketing_push_consent?: boolean }) => {
-    return HttpClient.post<AuthResponse>(API_ENDPOINTS.OTP_LOGIN, variables);
+    return HttpClient.post<AuthResponse>(API_ENDPOINTS.OTP_LOGIN, { ...variables, attribution: captureSellerAttribution() });
   },
   verifyPinCode: (variables: PinLoginInput) => {
     return HttpClient.post<AuthResponse>(API_ENDPOINTS.VERIFY_PIN_CODE, variables);

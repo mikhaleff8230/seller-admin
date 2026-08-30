@@ -389,6 +389,7 @@ const ProductList = ({
                   : 'bg-accent'
               }
             />
+            {record?.moderation_status === 'pending' && <span className="text-xs text-gray-500">{record.status === 'publish' ? 'Проверка после публикации' : 'На проверке'}</span>}
             {/* Плашка "мало" временно закомментирована - не актуально */}
             {/* {record?.quantity > 0 && record?.quantity < 10 && (
               <Badge

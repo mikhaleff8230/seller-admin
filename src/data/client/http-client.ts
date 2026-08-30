@@ -157,6 +157,8 @@ function formatBooleanSearchParam(key: string, value: boolean) {
 }
 
 interface SearchParamOptions {
+  status: string;
+  moderation_status: string;
   categories: string;
   code: string;
   type: string;

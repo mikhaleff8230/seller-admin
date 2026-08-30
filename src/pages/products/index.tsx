@@ -42,7 +42,8 @@ export default function ProductsPage() {
     page,
     type,
     categories: category,
-    status: status || undefined,
+    status: status === 'post_moderation' ? undefined : status || undefined,
+    moderation_status: status === 'post_moderation' ? 'pending' : undefined,
     name: searchTerm,
     orderBy,
     sortedBy,
@@ -178,6 +179,7 @@ export default function ProductsPage() {
                   <option value="publish">Опубликованные</option>
                   <option value="draft">Черновики</option>
                   <option value="under_review">На проверке</option>
+                  <option value="post_moderation">Постмодерация новых товаров</option>
                   <option value="unpublish">Не опубликованные</option>
                 </select>
                 <label className="text-sm text-gray-600 whitespace-nowrap">

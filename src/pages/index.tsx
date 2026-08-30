@@ -48,6 +48,19 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
     };
   }
   if (locale) {
+    if (permissions?.includes('store_owner') && !permissions.includes(SUPER_ADMIN) && ctx.query.onboarding !== 'skip') {
+      try {
+        const base = process.env.NEXT_PUBLIC_REST_API_ENDPOINT || process.env.NEXT_PUBLIC_API_URL;
+        const response = await fetch(`${base?.replace(/\/$/, '')}/api/seller/onboarding`, {
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        });
+        if (!response.ok) return { redirect: { destination: '/seller/entry', permanent: false } };
+        const state = await response.json();
+        if (state.status !== 'completed') return { redirect: { destination: '/seller/onboarding', permanent: false } };
+      } catch {
+        return { redirect: { destination: '/seller/entry', permanent: false } };
+      }
+    }
     return {
       props: {
         ...(await serverSideTranslations(locale, [

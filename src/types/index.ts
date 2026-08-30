@@ -191,6 +191,7 @@ export interface SetPinCodeInput {
 export interface AuthResponse {
   token: string;
   permissions: string[];
+  success?: boolean;
 }
 
 export interface Type {
@@ -608,6 +609,7 @@ export interface VerifyCouponResponse {
 }
 
 export interface Product {
+  moderation_status?: 'pending' | 'approved' | 'rejected' | 'hidden' | 'not_required' | null;
   id: string;
   translated_languages: string[];
   shop_id: string;
@@ -1682,6 +1684,7 @@ export interface TypeQueryOptions extends QueryOptions {
 }
 
 export interface ProductQueryOptions extends QueryOptions {
+  moderation_status?: string;
   type: string;
   name: string;
   categories: string;

@@ -8,6 +8,7 @@ import { API_ENDPOINTS } from '@/data/client/api-endpoints';
 import { Product } from '@/types';
 import { HttpClient } from '@/data/client/http-client';
 import { ToggleIconVertical } from '@/components/icons/toggle-icon';
+import { getAuthCredentials } from '@/utils/auth-utils';
 import {
   offset,
   flip,
@@ -27,6 +28,7 @@ const ProductStatusAction = ({
 }: ProductStatusActionProps) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const isAdmin = getAuthCredentials().permissions?.includes('super_admin');
 
   // Определяем доступные статусы для выбора
   const availableStatuses = [
@@ -48,6 +50,12 @@ const ProductStatusAction = ({
   ];
 
   const currentStatus = product?.status?.toLowerCase() || 'draft';
+  if (isAdmin && product.moderation_status) {
+    availableStatuses.push(
+      { value: ProductStatus.Approved, label: 'Одобрить проверку', translationKey: 'approved' },
+      { value: ProductStatus.Rejected, label: 'Отклонить и скрыть', translationKey: 'rejected' },
+    );
+  }
 
   const handleStatusChange = async (newStatus: ProductStatus, closeMenu: () => void) => {
     if (!product?.id) {

@@ -15,7 +15,10 @@ import { ModalProvider } from '@/components/ui/modal/modal.context';
 import DefaultSeo from '@/components/ui/default-seo';
 import ManagedModal from '@/components/ui/modal/managed-modal';
 import { CartProvider } from '@/contexts/quick-cart/cart.context';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { captureSellerAttribution } from '@/lib/seller-attribution';
+import { flushOnboardingGoals } from '@/lib/metrika';
+import { getAuthCredentials } from '@/utils/auth-utils';
 import type { NextPageWithLayout } from '@/types';
 import { useRouter } from 'next/router';
 import PrivateRoute from '@/utils/private-route';
@@ -43,7 +46,19 @@ const CustomApp = ({ Component, pageProps }: AppPropsWithLayout) => {
   const [queryClient] = useState(() => new QueryClient());
   const getLayout = Component.getLayout ?? ((page) => page);
 
-  const { locale } = useRouter();
+  const { locale, asPath } = useRouter();
+  useEffect(() => { captureSellerAttribution(); }, []);
+  useEffect(() => {
+    const { token, permissions } = getAuthCredentials();
+    if (!token || !permissions?.includes('store_owner') || permissions.includes('super_admin')) return;
+    let attempts = 0;
+    const flush = async () => {
+      if (await flushOnboardingGoals() || ++attempts >= 10) window.clearInterval(timer);
+    };
+    const timer = window.setInterval(flush, 3000);
+    flush();
+    return () => window.clearInterval(timer);
+  }, [asPath]);
   const dir = Config.getDirection(locale);
   return (
     <div dir={dir}>

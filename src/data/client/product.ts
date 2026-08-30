@@ -58,6 +58,7 @@ export const productClient = {
     shop_id,
     group_key,
     status,
+    moderation_status,
     ...params
   }: Partial<ProductQueryOptions>) => {
     return HttpClient.get<ProductPaginator>(API_ENDPOINTS.PRODUCTS, {
@@ -71,6 +72,7 @@ export const productClient = {
         categories,
         shop_id,
         status,
+        moderation_status,
       }),
     });
   },

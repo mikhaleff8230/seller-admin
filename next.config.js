@@ -2,6 +2,11 @@
 const defaultRuntimeCaching = require('next-pwa/cache');
 const runtimeCaching = [
   {
+    urlPattern: /\/api\/seller\/onboarding(?:\/|\?|$)/i,
+    handler: 'NetworkOnly',
+    method: 'GET',
+  },
+  {
     urlPattern: /^https:\/\/api\.sancan\.ru\/api\/seller\/promotion(?:\?|$)/i,
     handler: 'NetworkOnly',
     method: 'GET',

@@ -11,6 +11,7 @@ import type { LoginInput, OtpLoginInput, PinLoginInput } from '@/types';
 import { useEffect, useState } from 'react';
 import Alert from '@/components/ui/alert';
 import Router from 'next/router';
+import { sellerEntry } from '@/data/seller-onboarding';
 import {
   allowedRoles,
   hasAccess,
@@ -73,7 +74,7 @@ const LoginForm = () => {
           if (data?.token) {
             if (hasAccess(allowedRoles, data?.permissions)) {
               setAuthCredentials(data?.token, data?.permissions);
-              Router.push(Routes.dashboard);
+              Router.push(sellerEntry(data?.permissions));
               return;
             }
             setErrorMessage('form:error-enough-permission');
@@ -144,7 +145,7 @@ const LoginForm = () => {
           if (data?.token) {
             if (hasAccess(allowedRoles, data?.permissions)) {
               setAuthCredentials(data?.token, data?.permissions);
-              Router.push(Routes.dashboard);
+              Router.push(sellerEntry(data?.permissions));
               return;
             }
             setOtpError('Недостаточно прав доступа');
@@ -192,7 +193,7 @@ const LoginForm = () => {
           if (data?.token) {
             if (hasAccess(allowedRoles, data?.permissions)) {
               setAuthCredentials(data?.token, data?.permissions);
-              Router.push(Routes.dashboard);
+              Router.push(sellerEntry(data?.permissions));
               return;
             }
             setPinError('Недостаточно прав доступа');

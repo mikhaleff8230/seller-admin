@@ -3,7 +3,7 @@ import { API_ENDPOINTS } from './api-endpoints';
 import { Attachment } from '@/types';
 
 export const uploadClient = {
-  upload: async (variables: any) => {
+  upload: async (variables: any, endpoint: string = API_ENDPOINTS.ATTACHMENTS) => {
     let formData = new FormData();
     variables.forEach((attachment: any) => {
       formData.append('attachment[]', attachment);
@@ -14,7 +14,7 @@ export const uploadClient = {
       },
     };
     return HttpClient.post<Attachment>(
-      API_ENDPOINTS.ATTACHMENTS,
+      endpoint,
       formData,
       options
     );

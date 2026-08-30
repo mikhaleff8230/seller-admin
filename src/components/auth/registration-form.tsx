@@ -21,7 +21,7 @@ import AuthTabs from './auth-tabs';
 import PhoneInput from '@/components/ui/forms/phone-input';
 import OtpCodeInput from './otp-code-input';
 import { toast } from 'react-toastify';
-import { trackSellerRegistrationSuccess } from '@/lib/metrika';
+import { sellerEntry } from '@/data/seller-onboarding';
 import { formatRussianPhone, normalizeRussianPhone, phoneHref } from '@/utils/format-phone';
 import RegistrationConsents from './registration-consents';
 
@@ -33,7 +33,7 @@ type FormValues = {
 };
 
 const registrationFormSchema = yup.object().shape({
-  name: yup.string().required('form:error-name-required'),
+  name: yup.string(),
   email: yup
     .string()
     .email('form:error-email-format')
@@ -44,7 +44,7 @@ const registrationFormSchema = yup.object().shape({
 
 const RegistrationForm = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'phone' | 'email'>('phone');
+  const [activeTab, setActiveTab] = useState<'phone' | 'email'>('email');
   
   // Состояние для OTP
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -99,9 +99,8 @@ const RegistrationForm = () => {
         onSuccess: (data) => {
           if (data?.token) {
             if (hasAccess(allowedRoles, data?.permissions)) {
-              trackSellerRegistrationSuccess();
               setAuthCredentials(data?.token, data?.permissions);
-              router.push(Routes.dashboard);
+              router.push(sellerEntry(data?.permissions));
               return;
             }
             setErrorMessage('form:error-enough-permission');
@@ -110,10 +109,12 @@ const RegistrationForm = () => {
           }
         },
         onError: (error: any) => {
-          Object.keys(error?.response?.data || {}).forEach((field: any) => {
+          const fields = error?.response?.data?.errors || error?.response?.data || {};
+          setErrorMessage(fields.email ? 'Этот email уже используется или введён неверно. Проверьте адрес или войдите в аккаунт.' : 'Не удалось открыть магазин. Попробуйте ещё раз.');
+          Object.keys(fields).filter((field) => ['email', 'password', 'name'].includes(field)).forEach((field: any) => {
             setError(field, {
               type: 'manual',
-              message: error?.response?.data[field],
+              message: field === 'email' ? 'Проверьте email или войдите в существующий аккаунт.' : 'Проверьте это поле.',
             });
           });
         },
@@ -213,9 +214,8 @@ const RegistrationForm = () => {
             });
             
             if (hasAccess(allowedRoles, data?.permissions)) {
-              trackSellerRegistrationSuccess();
               setAuthCredentials(data?.token, data?.permissions);
-              router.push(Routes.dashboard);
+              router.push(sellerEntry(data?.permissions));
               return;
             }
             // Если прав недостаточно, выводим более подробную ошибку
@@ -275,6 +275,7 @@ const RegistrationForm = () => {
                   {t('form:input-label-name')}
                 </label>
                 <Input
+                  name="phone-registration-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   variant="outline"
@@ -302,6 +303,7 @@ const RegistrationForm = () => {
                   {t('form:input-label-email')} (опционально)
                 </label>
                 <Input
+                  name="phone-registration-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -368,14 +370,6 @@ const RegistrationForm = () => {
       {activeTab === 'email' && (
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <Input
-            label={t('form:input-label-name')}
-            {...register('name')}
-            variant="outline"
-            className="mb-4"
-            error={t(errors?.name?.message!)}
-            placeholder="(можно ваше Имя)"
-          />
-          <Input
             label={t('form:input-label-email')}
             {...register('email')}
             type="email"
@@ -392,7 +386,7 @@ const RegistrationForm = () => {
           />
           <RegistrationConsents {...consents} onChange={(field, value) => setConsents((current) => ({ ...current, [field]: value }))} />
           <Button className="w-full !bg-violet-700 !text-white hover:!bg-violet-800" loading={loading} disabled={loading}>
-            {t('form:text-register')}
+            Открыть магазин
           </Button>
 
           {errorMessage ? (
