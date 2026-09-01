@@ -1,10 +1,12 @@
 import Head from 'next/head';
+import ImpersonationBanner from '@/components/auth/impersonation-banner';
 import Logo from '@/components/ui/logo';
 import styles from './onboarding.module.css';
 
 export default function OnboardingLayout({ children, step }: { children: React.ReactNode; step?: 1 | 2 }) {
   return <div className={styles.page}>
     <Head><title>Откройте магазин — SANCAN</title><meta name="robots" content="noindex,nofollow" /></Head>
+    <ImpersonationBanner />
     <Logo href={process.env.NEXT_PUBLIC_SHOP_URL || 'https://sancan.ru'} className={styles.brand} aria-label="SANCAN — главная" />
     <main className={styles.content}>
       {step && <nav className={styles.progress} aria-label={`Шаг ${step} из 2`}>
