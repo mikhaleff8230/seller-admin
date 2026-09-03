@@ -155,12 +155,19 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
           settings: {
             ...initialValues?.settings,
             socials: initialValues?.settings?.socials
-              ? initialValues?.settings?.socials.map((social: any) => ({
-                icon: updatedIcons?.find(
-                  (icon) => icon?.value === social?.icon
-                ),
-                url: social?.url,
-              }))
+              ? initialValues?.settings?.socials
+                  .filter(
+                    (social: any) =>
+                      Boolean(social?.icon) &&
+                      typeof social?.url === 'string' &&
+                      Boolean(social.url.trim())
+                  )
+                  .map((social: any) => ({
+                    icon: updatedIcons?.find(
+                      (icon) => icon?.value === social?.icon
+                    ),
+                    url: social.url.trim(),
+                  }))
               : [],
           },
         },
@@ -196,7 +203,7 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
 
   const slugAutoSuggest = formatSlug(watch('name'));
   const { t } = useTranslation();
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     control,
     name: 'settings.socials',
   });
@@ -206,17 +213,21 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
     (router?.query?.action === 'edit' || router?.pathname === '/[shop]/edit') &&
     router?.locale === Config.defaultLanguage;
   function onSubmit(values: FormValues) {
-    const socials = (values?.settings?.socials ?? [])
-      .filter(
-        (social: any) =>
-          Boolean(social?.icon?.value) &&
-          typeof social?.url === 'string' &&
-          Boolean(social.url.trim())
-      )
-      .map((social: any) => ({
-        icon: social.icon.value,
-        url: social.url.trim(),
-      }));
+    const completeSocialRows = (values?.settings?.socials ?? []).filter(
+      (social: any) =>
+        Boolean(social?.icon?.value) &&
+        typeof social?.url === 'string' &&
+        Boolean(social.url.trim())
+    );
+
+    if (completeSocialRows.length !== (values?.settings?.socials?.length ?? 0)) {
+      replace(completeSocialRows);
+    }
+
+    const socials = completeSocialRows.map((social: any) => ({
+      icon: social.icon.value,
+      url: social.url.trim(),
+    }));
 
     const settings = {
       ...values?.settings,
