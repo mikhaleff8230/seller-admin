@@ -206,15 +206,22 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
     (router?.query?.action === 'edit' || router?.pathname === '/[shop]/edit') &&
     router?.locale === Config.defaultLanguage;
   function onSubmit(values: FormValues) {
+    const socials = (values?.settings?.socials ?? [])
+      .filter(
+        (social: any) =>
+          Boolean(social?.icon?.value) &&
+          typeof social?.url === 'string' &&
+          Boolean(social.url.trim())
+      )
+      .map((social: any) => ({
+        icon: social.icon.value,
+        url: social.url.trim(),
+      }));
+
     const settings = {
       ...values?.settings,
       location: { ...omit(values?.settings?.location, '__typename') },
-      socials: values?.settings?.socials
-        ? values?.settings?.socials?.map((social: any) => ({
-          icon: social?.icon?.value,
-          url: social?.url,
-        }))
-        : [],
+      socials,
     };
     if (initialValues) {
       const { ...restAddress } = values.address;
