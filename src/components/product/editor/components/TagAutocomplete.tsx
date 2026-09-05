@@ -147,7 +147,7 @@ export default function TagAutocomplete({
   };
 
   return (
-    <div ref={wrapperRef} className="space-y-2">
+    <div ref={wrapperRef} className="relative space-y-2">
       {/* Поле ввода */}
       <div className="relative">
         <input

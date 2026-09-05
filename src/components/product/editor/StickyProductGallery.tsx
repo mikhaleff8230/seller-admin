@@ -122,7 +122,7 @@ export default function StickyProductGallery() {
   const currentSrc = current?.thumbnail || current?.url || current?.original;
 
   return (
-    <div className="wb-sticky wb-card">
+    <div className="wb-product-gallery wb-sticky wb-card">
       <div className="wb-gallery-main">
         {currentSrc ? (
           <img src={currentSrc} alt="Превью товара" />

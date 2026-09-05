@@ -295,15 +295,15 @@ export default function VariantsRail() {
       : null;
 
   return (
-    <aside className="wb-editor-left wb-sticky wb-card">
-      <div className="mb-3 flex items-center justify-between">
+    <aside className="wb-variants-rail wb-editor-left wb-sticky wb-card">
+      <div className="wb-variants-rail-header mb-3 flex items-center justify-between">
         <h2 className="wb-card-title" style={{ margin: 0 }}>
           Варианты
         </h2>
         <span style={{ fontSize: 12, color: '#8c8c8c' }}>{items.length}</span>
       </div>
 
-      <div>
+      <div className="wb-variants-rail-list">
         {items.map((item, index) => {
           const src = getImageSrc(item.image) || getImageSrc(image);
           const isActive =
@@ -332,7 +332,7 @@ export default function VariantsRail() {
         })}
       </div>
 
-      <div style={{ marginTop: 12 }}>
+      <div className="wb-variants-rail-actions" style={{ marginTop: 12 }}>
         <button
           type="button"
           className="wb-btn wb-btn-dark wb-btn-block"

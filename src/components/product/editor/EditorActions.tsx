@@ -61,7 +61,7 @@ export default function EditorActions({
     : Routes.product.list;
 
   const errorBlock = errors.validation ? (
-    <div className="absolute left-6 bottom-[76px] max-w-md p-3 bg-red-50 border border-red-200 rounded-lg shadow-sm">
+    <div className="wb-editor-error absolute left-6 bottom-[76px] max-w-md p-3 bg-red-50 border border-red-200 rounded-lg shadow-sm">
       <p className="text-sm font-medium text-red-800 mb-1">
         Для публикации заполните обязательные поля:
       </p>
