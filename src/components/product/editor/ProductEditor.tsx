@@ -28,6 +28,38 @@ type ProductEditorProps = {
 
 const DIGITAL_DELIVERY_ENABLED = false;
 
+const buildProductFormData = (
+  data: Record<string, unknown>,
+  video: File,
+  productId?: string | number
+) => {
+  const formData = new FormData();
+
+  Object.entries(data).forEach(([key, value]) => {
+    if (value === undefined) return;
+    if (value === null) {
+      formData.append(key, '');
+      return;
+    }
+    if (typeof value === 'boolean') {
+      formData.append(key, value ? '1' : '0');
+      return;
+    }
+    if (typeof value === 'object') {
+      formData.append(key, JSON.stringify(value));
+      return;
+    }
+    formData.append(key, String(value));
+  });
+
+  formData.set('video', video, video.name);
+  if (productId !== undefined) {
+    formData.set('id', String(productId));
+  }
+
+  return formData;
+};
+
 export default function ProductEditor({ initialProduct, productId }: ProductEditorProps) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -149,6 +181,17 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
     }
   }, [initialProduct]);
 
+  const initialVideos = (() => {
+    const videos = Array.isArray(initialProduct?.videos) ? initialProduct.videos : [];
+    const coverVideo = initialProduct?.cover_video;
+    if (!coverVideo) return videos;
+
+    return [
+      coverVideo,
+      ...videos.filter((video) => String(video.id) !== String(coverVideo.id)),
+    ];
+  })();
+
   // Инициализация формы с безопасными значениями по умолчанию
   const defaultValues: Partial<ProductEditorFormData> = {
     name: initialProduct?.name || '',
@@ -258,9 +301,12 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
     brand: initialProduct?.manufacturer?.name || (initialProduct as any)?.brand || '',
     tags: Array.isArray((initialProduct as any)?.tags) ? (initialProduct as any).tags : [],
     // variations: Array.isArray((initialProduct as any)?.variations) ? (initialProduct as any).variations : [], // Убрали - больше не используется
-    videos: Array.isArray((initialProduct as any)?.videos) 
-      ? (initialProduct as any).videos 
-      : [],
+    videos: initialVideos,
+    video: undefined,
+    video_as_cover: Boolean(
+      initialProduct?.has_video_as_cover ?? initialProduct?.video_as_cover
+    ),
+    remove_video: false,
     image: initialProduct?.image ? {
       id: Number(initialProduct.image.id) || undefined,
       url: initialProduct.image.thumbnail || initialProduct.image.original || '',
@@ -313,6 +359,9 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
       group_variants: Array.isArray(defaultValues.group_variants) ? defaultValues.group_variants : [],
       // variations: Array.isArray(defaultValues.variations) ? defaultValues.variations : [], // Убрали - больше не используется
       videos: Array.isArray(defaultValues.videos) ? defaultValues.videos : [],
+      video: undefined,
+      video_as_cover: Boolean(defaultValues.video_as_cover),
+      remove_video: false,
       attributes: Array.isArray(defaultValues.attributes) ? defaultValues.attributes : [],
       grouping_attributes: Array.isArray((defaultValues as any).grouping_attributes) ? (defaultValues as any).grouping_attributes : [],
       // Инициализируем attribute_values если они есть
@@ -462,6 +511,10 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
       // Убрали variations - больше не используется
       // const variationsArray = Array.isArray(data.variations) ? data.variations : [];
       const videosArray = Array.isArray(data.videos) ? data.videos : [];
+      const videoFile =
+        typeof File !== 'undefined' && data.video instanceof File ? data.video : null;
+      const videoAsCover = Boolean(data.video_as_cover);
+      const removeVideo = Boolean(data.remove_video) && !videoFile;
       
       // Фильтруем галерею, исключая главное фото (если оно там есть)
       if (data.image && galleryArray.length > 0) {
@@ -487,6 +540,9 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
         group_variants: groupVariantsArray,
         // variations: variationsArray, // Убрали - больше не используется
         videos: videosArray,
+        video: videoFile,
+        video_as_cover: videoAsCover,
+        remove_video: removeVideo,
         is_external: Boolean((data as any).is_external),
         external_product_url: (data as any).external_product_url || '',
         digital_file_input: (data as any).digital_file_input,
@@ -838,8 +894,9 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
           : {},
         // Групповые товары
         ...(normalizedData.group_key ? { group_key: normalizedData.group_key } : {}),
-        // Видео
-        ...(Array.isArray(videosArray) && videosArray.length > 0 ? { videos: videosArray } : {}),
+        // Видео-метаданные; сам File добавляется в FormData ниже
+        video_as_cover: videoAsCover,
+        remove_video: removeVideo,
         // Производитель (manufacturer_id)
         ...(manufacturerId ? { manufacturer_id: manufacturerId } : {}),
         // ВАЖНО: Отправляем slug_numeric_code отдельно (только для существующих товаров)
@@ -880,6 +937,37 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
               })(),
             }
           : {}),
+      };
+
+      const requestPayload = videoFile
+        ? buildProductFormData(submitData, videoFile, productId)
+        : submitData;
+      const updatePayload =
+        productId && !(requestPayload instanceof FormData)
+          ? { id: productId, ...requestPayload }
+          : requestPayload;
+
+      const syncVideoState = (response: any) => {
+        if (response?.video_upload_error) {
+          toast.warning(response.video_upload_error);
+          return;
+        }
+        if (Array.isArray(response?.videos)) {
+          methods.setValue('videos', response.videos, { shouldDirty: false });
+        } else if (removeVideo) {
+          methods.setValue('videos', [], { shouldDirty: false });
+        }
+        methods.setValue('video', undefined, { shouldDirty: false });
+        methods.setValue('remove_video', false, { shouldDirty: false });
+        methods.setValue(
+          'video_as_cover',
+          Boolean(
+            response?.has_video_as_cover ??
+              response?.video_as_cover ??
+              (removeVideo ? false : videoAsCover)
+          ),
+          { shouldDirty: false }
+        );
       };
       
       // Дополнительная валидация перед отправкой (только при публикации)
@@ -925,8 +1013,11 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
         attributeValues: normalizedData.attribute_values,
         attributeValuesKeys: normalizedData.attribute_values ? Object.keys(normalizedData.attribute_values) : [],
         submitAttributeValues: submitData.attribute_values,
+        hasVideoFile: Boolean(videoFile),
+        videoAsCover,
+        removeVideo,
         hasRequiredFields: !!(submitData.name && submitData.type_id && submitData.price !== undefined && submitData.unit),
-        submitData: JSON.stringify(submitData, null, 2),
+        submitData,
       });
 
       // Обработка групповых товаров
@@ -1032,6 +1123,40 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
         
         // Сохраняем все варианты группы
         const groupResponse = await handleGroupVariants(normalizedData.group_key!, variantsToSave, formDataForVariants, methods);
+
+        const videoSettingsChanged = Boolean(
+          videoFile ||
+          removeVideo ||
+          methods.formState.dirtyFields.video_as_cover
+        );
+        const savedProducts = Array.isArray(groupResponse?.data) ? groupResponse.data : [];
+        const targetProduct = productId
+          ? savedProducts.find((saved: Product) => String(saved.id) === String(productId))
+          : savedProducts.find((saved: Product) =>
+              normalizedData.sku
+                ? String(saved.sku || '') === String(normalizedData.sku)
+                : saved.name === normalizedData.name
+            ) || savedProducts[0];
+        const targetProductId = productId || targetProduct?.id;
+
+        if (targetProductId && videoSettingsChanged) {
+          const mediaPayload = videoFile
+            ? buildProductFormData(
+                { video_as_cover: videoAsCover, remove_video: false },
+                videoFile,
+                targetProductId
+              )
+            : {
+                id: targetProductId,
+                video_as_cover: videoAsCover,
+                remove_video: removeVideo,
+              };
+          const mediaResponse = await productClient.update(mediaPayload as any);
+          syncVideoState(mediaResponse);
+          setProduct(mediaResponse);
+        } else if (videoSettingsChanged) {
+          toast.error('Товар создан, но вариант для загрузки видео не найден. Повторите сохранение.');
+        }
         
         // Обновляем slug в форме после сохранения группы
         if (productId && groupResponse?.data) {
@@ -1069,13 +1194,14 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
         // Обычное сохранение (не групповой товар)
         if (productId) {
           updateProductMutation(
-            { id: productId, ...submitData } as any,
+            updatePayload as any,
             {
               onSuccess: async (response: any) => {
                 toast.success(t('common:text-update-success'));
                 if (response) {
                   setProduct(response);
                 }
+                syncVideoState(response);
                 
                 // Обновляем slug в форме из ответа сервера
                 if (response?.slug) {
@@ -1144,12 +1270,13 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
             }
           );
         } else {
-          createProduct(submitData as any, {
+          createProduct(requestPayload as any, {
             onSuccess: async (response: any) => {
               toast.success(t('common:text-create-success'));
               if (response) {
                 setProduct(response);
               }
+              syncVideoState(response);
               
               // Сохраняем код из slug ответа сервера
               if (response?.slug) {
@@ -1489,9 +1616,11 @@ function ProductEditorContent({
   onBoostToggle: (enabled: boolean) => void;
 }) {
   const { getValues, clearErrors: clearFormErrors } = useFormContext<ProductEditorFormData>();
-  const { clearErrors } = useProductEditorStore();
+  const { clearErrors, isLoading } = useProductEditorStore();
+  const saveInProgress = isLoading || creating || updating;
 
   const performSave = (publish: boolean) => {
+    if (saveInProgress) return;
     clearErrors();
     clearFormErrors();
     handleSave(getValues(), publish).catch((error: any) => {
@@ -1511,7 +1640,7 @@ function ProductEditorContent({
       footer={
         <EditorActions
           onSave={performSave}
-          isLoading={creating || updating}
+          isLoading={saveInProgress}
           productId={productId}
           variant="footer"
         />

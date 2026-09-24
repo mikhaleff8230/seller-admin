@@ -32,7 +32,10 @@ export const productClient = {
         videoFile: data.get('video'),
         isFormData: data instanceof FormData,
       });
-      return HttpClient.put<Product>(`${API_ENDPOINTS.PRODUCTS}/${id}`, data);
+      // PHP не разбирает multipart/form-data для чистого PUT.
+      // POST + method spoofing даёт Laravel и поля, и UploadedFile.
+      data.set('_method', 'PUT');
+      return HttpClient.post<Product>(`${API_ENDPOINTS.PRODUCTS}/${id}`, data);
     }
     // Иначе используем стандартную логику
     const { id, ...input } = data;

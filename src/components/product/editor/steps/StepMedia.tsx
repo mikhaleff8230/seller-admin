@@ -68,11 +68,9 @@ export default function StepMedia() {
 
   const image = watch('image');
   const gallery = watch('gallery');
-  // const videos = watch('videos'); // ВРЕМЕННО ЗАКОММЕНТИРОВАНО
   
   // Просто убеждаемся, что gallery - массив
   const galleryArray = Array.isArray(gallery) ? gallery : [];
-  // const videosArray = Array.isArray(videos) ? videos : []; // ВРЕМЕННО ЗАКОММЕНТИРОВАНО
 
   // Минимальная инициализация - только один раз при монтировании
   useEffect(() => {
@@ -81,12 +79,6 @@ export default function StepMedia() {
     } else if (!Array.isArray(gallery)) {
       setValue('gallery', []);
     }
-    // ВРЕМЕННО ЗАКОММЕНТИРОВАНО
-    // if (videos === undefined || videos === null) {
-    //   setValue('videos', []);
-    // } else if (!Array.isArray(videos)) {
-    //   setValue('videos', []);
-    // }
   }, []); // Только при монтировании
 
   // Настройка сенсоров для drag and drop
@@ -189,49 +181,6 @@ export default function StepMedia() {
         </Card>
       </div>
 
-      {/* Видео (опционально) - ВРЕМЕННО ЗАКОММЕНТИРОВАНО до дальнейшей разработки */}
-      {/* 
-      <div className="flex flex-wrap">
-        <Description
-          title="Видео"
-          details="Загрузите видео товара (опционально, до 40 Мб)"
-          className="w-full px-0 pb-5 sm:w-4/12 sm:py-8 sm:pe-4 md:w-1/3 md:pe-5"
-        />
-        <Card className="w-full sm:w-8/12 md:w-2/3">
-          <FileInput
-            name="videos"
-            control={control}
-            multiple={true}
-            acceptVideo={true}
-            maxSize={40 * 1024 * 1024}
-          />
-          {videosArray.length > 0 && (
-            <div className="mt-4">
-              <p className="text-sm text-gray-600 mb-2">
-                Загруженные видео ({videosArray.length})
-              </p>
-              <div className="space-y-2">
-                {videosArray.map((video: any, index: number) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 p-2 border rounded-lg"
-                  >
-                    <span className="text-sm text-gray-700">
-                      {video.name || video.url || `Видео ${index + 1}`}
-                    </span>
-                    {video.size && (
-                      <span className="text-xs text-gray-500">
-                        ({(video.size / (1024 * 1024)).toFixed(2)} Мб)
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </Card>
-      </div>
-      */}
     </div>
   );
 }

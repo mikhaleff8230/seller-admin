@@ -24,7 +24,7 @@ import ProductAttributesForm from './product-attributes-form';
 import ProductDimensionsForm from './product-dimensions-form';
 import { Config } from '@/config';
 import Alert from '@/components/ui/alert';
-import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import ProductAuthorInput from './product-author-input';
 import ProductManufacturerInput from './product-manufacturer-input';
 import { EditIcon } from '@/components/icons/edit';
@@ -105,26 +105,12 @@ export default function CreateOrUpdateProductForm({
   initialProductType,
 }: ProductFormProps) {
   const router = useRouter();
-  const videoInputRef = useRef<HTMLInputElement>(null);
-  const [videoPreview, setVideoPreview] = useState<string>('');
   const [boostEnabled, setBoostEnabled] = useState(Boolean(initialValues?.boost_enabled));
   const [boostStatus, setBoostStatus] = useState(initialValues?.boost_status || 'off');
   const [boostBalance, setBoostBalance] = useState<string>('0.00');
   const [boostBusy, setBoostBusy] = useState(false);
   const { locale } = router;
   
-  // Инициализируем превью видео при загрузке формы, если есть существующее видео
-  useEffect(() => {
-    if (initialValues?.video && Array.isArray(initialValues.video) && initialValues.video.length > 0) {
-      const firstVideo = initialValues.video[0] as any;
-      const previewUrl = firstVideo?.poster_url || firstVideo?.thumbnail_url || firstVideo?.preview_url || firstVideo?.video_url || firstVideo?.url;
-      if (previewUrl) {
-        setVideoPreview(previewUrl);
-      }
-    } else {
-      setVideoPreview('');
-    }
-  }, [initialValues?.video]);
   useEffect(() => {
     setBoostEnabled(Boolean(initialValues?.boost_enabled));
     setBoostStatus(initialValues?.boost_status || 'off');
@@ -438,25 +424,19 @@ export default function CreateOrUpdateProductForm({
 
     try {
       // Проверяем, есть ли видео файл для загрузки
-      // ВАЖНО: Проверяем и values.video, и videoInputRef.current?.files
-      // так как файл может быть установлен через setValue или напрямую через input
+      // Legacy-форма может получить File через значения react-hook-form.
       const videoFileFromValues = values.video;
-      const videoFileFromInput = videoInputRef.current?.files?.[0];
-      const videoFile = videoFileFromValues instanceof File ? videoFileFromValues : 
-                       (videoFileFromInput instanceof File ? videoFileFromInput : null);
+      const videoFile = videoFileFromValues instanceof File ? videoFileFromValues : null;
       const videoAsCover = values.video_as_cover || false;
       
       // Логируем проверку видео файла
       console.log('Checking video file:', {
         videoFileFromValues,
-        videoFileFromInput,
         videoFile,
         isFile: videoFile instanceof File,
         type: typeof videoFile,
         constructor: videoFile?.constructor?.name,
         hasVideo: !!videoFile,
-        videoInputRef: videoInputRef.current,
-        videoInputFiles: videoInputRef.current?.files,
       });
       
       // Если есть видео файл, отправляем через FormData
@@ -769,128 +749,6 @@ export default function CreateOrUpdateProductForm({
                 </div>
               </Card>
             </div>
-          )}
-
-          {/* ВРЕМЕННО ЗАКОММЕНТИРОВАНО: Раздел добавления видео */}
-          {false && (
-          <div className="my-5 flex flex-wrap border-b border-dashed border-border-base pb-8 sm:my-8">
-            <Description
-              title={t('form:video-title')}
-              details={t('form:video-help-text')}
-              className="w-full px-0 pb-5 sm:w-4/12 sm:py-8 sm:pe-4 md:w-1/3 md:pe-5"
-            />
-
-            <Card className="w-full sm:w-8/12 md:w-2/3">
-              <div className="mb-5">
-                <Label className="mb-3 block text-sm font-semibold leading-none text-body-dark">
-                  Видео (до 40 Мб)
-                </Label>
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept="video/*"
-                    ref={videoInputRef}
-                    className="hidden"
-                    id="video-upload-product"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      console.log('Video input onChange:', {
-                        file,
-                        isFile: file instanceof File,
-                        fileName: file?.name,
-                        fileSize: file?.size,
-                        fileType: file?.type,
-                      });
-                      if (file) {
-                        setValue('video', file as any, { shouldDirty: true, shouldValidate: false });
-                        setVideoPreview(URL.createObjectURL(file));
-                        console.log('Video file set in form:', {
-                          videoValue: values.video,
-                          setValueCalled: true,
-                        });
-                      } else {
-                        setValue('video', undefined);
-                        setVideoPreview('');
-                      }
-                    }}
-                  />
-                  <label
-                    htmlFor="video-upload-product"
-                    className="flex items-center justify-center w-full h-32 border-2 border-dashed border-light-300 dark:border-dark-400 rounded-lg cursor-pointer hover:border-brand transition-colors"
-                  >
-                    <div className="text-center">
-                      <svg className="w-8 h-8 text-light-600 dark:text-dark-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                      <p className="text-sm text-light-base dark:text-dark-base">
-                        Нажмите, чтобы загрузить видео
-                      </p>
-                    </div>
-                  </label>
-                </div>
-                {videoPreview && (
-                  <div className="mt-4 relative aspect-video rounded-lg overflow-hidden">
-                    {videoPreview.startsWith('blob:') ? (
-                      <video
-                        src={videoPreview}
-                        controls
-                        preload="metadata"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          console.error('Video preview error:', e);
-                        }}
-                      />
-                    ) : (
-                      <video
-                        src={(initialValues?.video?.[0] as any)?.video_url || (initialValues?.video?.[0] as any)?.url || videoPreview}
-                        controls
-                        preload="metadata"
-                        className="w-full h-full object-cover"
-                        poster={(initialValues?.video?.[0] as any)?.poster_url || (initialValues?.video?.[0] as any)?.thumbnail_url || videoPreview}
-                        onError={(e) => {
-                          console.error('Video preview error:', e);
-                          const posterUrl = (initialValues?.video?.[0] as any)?.poster_url || (initialValues?.video?.[0] as any)?.thumbnail_url;
-                          if (posterUrl && videoPreview !== posterUrl) {
-                            setVideoPreview(posterUrl);
-                          }
-                        }}
-                      />
-                    )}
-                    {initialValues?.video && Array.isArray(initialValues.video) && initialValues.video.length > 0 && !videoPreview.startsWith('blob:') && (
-                      <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
-                        Видео загружено
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="mb-5 flex items-center">
-                <input
-                  type="checkbox"
-                  id="video_as_cover"
-                  {...register('video_as_cover', {
-                    setValueAs: (value) => {
-                      if (typeof value === 'boolean') {
-                        return value;
-                      }
-                      if (value && typeof value === 'object' && 'target' in value) {
-                        return value.target.checked;
-                      }
-                      return Boolean(value);
-                    },
-                  })}
-                  className="h-4 w-4 rounded border-gray-300 text-accent focus:ring-accent"
-                />
-                <Label
-                  htmlFor="video_as_cover"
-                  className="ml-2 text-sm font-normal text-body-dark cursor-pointer"
-                >
-                  {t('form:video-as-cover-label')}
-                </Label>
-              </div>
-            </Card>
-          </div>
           )}
 
           <div className="my-5 flex flex-wrap border-b border-dashed border-border-base pb-8 sm:my-8">

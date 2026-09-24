@@ -3,6 +3,7 @@ import StickyProductGallery from './StickyProductGallery';
 import VariantsRail from './VariantsRail';
 import { useFormContext } from 'react-hook-form';
 import { ProductEditorFormData } from '@/schemas/product-editor.schema';
+import VideoCoverCard from './VideoCoverCard';
 
 type ProductEditorShellProps = {
   children: ReactNode;
@@ -93,12 +94,7 @@ export default function ProductEditorShell({
             </div>
           </div>
 
-          <div className="wb-card">
-            <h2 className="wb-card-title">Видеообложка</h2>
-            <p style={{ fontSize: 13, color: '#8c8c8c', margin: 0 }}>
-              Загрузка видео временно отключена. Можно добавить позже в медиа.
-            </p>
-          </div>
+          <VideoCoverCard />
 
           <details className="wb-card" open>
             <summary
@@ -116,6 +112,7 @@ export default function ProductEditorShell({
               <li>Формат JPG/PNG/WEBP, до 5 МБ</li>
               <li>Первое фото — главное на витрине</li>
               <li>Рекомендуется вертикальный кадр 3:4</li>
+              <li>Видео MP4/MOV/WebM до 50 МБ; обложка создаётся автоматически</li>
             </ul>
           </details>
         </aside>

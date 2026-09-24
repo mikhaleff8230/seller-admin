@@ -8,6 +8,28 @@ export const ImageSchema = z.object({
   original: z.string().optional(),
 });
 
+export const ProductVideoSchema = z.object({
+  id: z.union([z.string(), z.number()]),
+  product_id: z.union([z.string(), z.number()]),
+  url: z.string(),
+  video_url: z.string().nullable().optional(),
+  preview_url: z.string().nullable().optional(),
+  poster_url: z.string().nullable().optional(),
+  thumbnail_url: z.string().nullable().optional(),
+  file_name: z.string().nullable().optional(),
+  duration: z.union([z.string(), z.number()]).nullable().optional(),
+  width: z.number().nullable().optional(),
+  height: z.number().nullable().optional(),
+  file_size: z.union([z.string(), z.number()]).nullable().optional(),
+  mime_type: z.string().nullable().optional(),
+  status: z.string().optional(),
+});
+
+const VideoFileSchema = z.custom<File>(
+  (value) => typeof File !== 'undefined' && value instanceof File,
+  'Выберите видеофайл'
+);
+
 // Схема для значений атрибутов
 export const AttributeValueSchema = z.record(
   z.string(),
@@ -73,7 +95,10 @@ export const ProductEditorSchema = z.object({
   // Шаг 2: Медиа
   image: ImageSchema.optional().nullable(),
   gallery: z.preprocess((val: unknown) => normalizeArray(val, []), z.array(ImageSchema)),
-  videos: z.preprocess((val: unknown) => normalizeArray(val, []), z.array(z.any())),
+  videos: z.preprocess((val: unknown) => normalizeArray(val, []), z.array(ProductVideoSchema)),
+  video: VideoFileSchema.optional().nullable(),
+  video_as_cover: z.boolean().optional().default(false),
+  remove_video: z.boolean().optional().default(false),
 
   // Шаг 3: Характеристики
   attributes: z.preprocess((val: unknown) => normalizeArray(val, []), z.array(AttributeSchema)),
@@ -160,7 +185,10 @@ export const GeneralStepSchema = z.object({
 export const MediaStepSchema = z.object({
   image: ImageSchema.optional().nullable(),
   gallery: z.union([z.array(ImageSchema), z.undefined(), z.null()]).default([]),
-  videos: z.union([z.array(z.any()), z.undefined(), z.null()]).default([]),
+  videos: z.union([z.array(ProductVideoSchema), z.undefined(), z.null()]).default([]),
+  video: VideoFileSchema.optional().nullable(),
+  video_as_cover: z.boolean().optional().default(false),
+  remove_video: z.boolean().optional().default(false),
 });
 
 export const AttributesStepSchema = z.object({
@@ -219,4 +247,3 @@ export const ShippingStepSchema = z.object({
   lat: optionalFiniteNumber,
   lng: optionalFiniteNumber,
 });
-

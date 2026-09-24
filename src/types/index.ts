@@ -608,6 +608,23 @@ export interface VerifyCouponResponse {
   message?: string;
 }
 
+export interface ProductVideo {
+  id: string | number;
+  product_id: string | number;
+  url: string;
+  video_url?: string | null;
+  preview_url?: string | null;
+  poster_url?: string | null;
+  thumbnail_url?: string | null;
+  file_name?: string | null;
+  duration?: number | string | null;
+  width?: number | null;
+  height?: number | null;
+  file_size?: number | string | null;
+  mime_type?: string | null;
+  status?: string;
+}
+
 export interface Product {
   moderation_status?: 'pending' | 'approved' | 'rejected' | 'hidden' | 'not_required' | null;
   id: string;
@@ -634,6 +651,11 @@ export interface Product {
   video?: {
     url: string;
   }[];
+  videos?: ProductVideo[];
+  has_video_as_cover?: boolean;
+  video_as_cover?: boolean;
+  cover_video_id?: string | number | null;
+  cover_video?: ProductVideo | null;
   sku?: string;
   gallery?: Attachment[];
   image?: Attachment;
@@ -687,9 +709,11 @@ export interface CreateProduct {
   max_price?: number;
   min_price?: number;
   variation_options?: UpsertVariationsHasMany;
-  video: {
+  video?: File | {
     url: string;
   }[];
+  video_as_cover?: boolean;
+  remove_video?: boolean;
   sku?: string;
   gallery?: AttachmentInput[];
   image?: AttachmentInput;
