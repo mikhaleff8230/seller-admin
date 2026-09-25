@@ -938,6 +938,11 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
         } else if (removeVideo) {
           methods.setValue('videos', [], { shouldDirty: false });
         }
+        if (Array.isArray(response?.media_order)) {
+          methods.setValue('media_order', response.media_order, {
+            shouldDirty: false,
+          });
+        }
         methods.setValue('video', undefined, { shouldDirty: false });
         methods.setValue('remove_video', false, { shouldDirty: false });
         methods.setValue(

@@ -40,6 +40,37 @@ const videoPoster = (video: any) =>
 const videoSource = (video: any) =>
   video?.preview_url || video?.video_url || video?.url || '';
 
+const mergeVisibleOrder = (
+  currentOrder: string[],
+  visibleOrder: string[],
+  hiddenKeys: Set<string>
+) => {
+  const visibleKeys = new Set(visibleOrder);
+  const template = currentOrder.filter(
+    (key) => visibleKeys.has(key) || hiddenKeys.has(key)
+  );
+  const merged: string[] = [];
+  let visibleIndex = 0;
+
+  template.forEach((key) => {
+    if (hiddenKeys.has(key)) {
+      if (!merged.includes(key)) merged.push(key);
+      return;
+    }
+    const nextVisible = visibleOrder[visibleIndex++];
+    if (nextVisible && !merged.includes(nextVisible)) merged.push(nextVisible);
+  });
+
+  visibleOrder.slice(visibleIndex).forEach((key) => {
+    if (!merged.includes(key)) merged.push(key);
+  });
+  hiddenKeys.forEach((key) => {
+    if (!merged.includes(key)) merged.push(key);
+  });
+
+  return merged;
+};
+
 function SortableThumb({
   item,
   index,
@@ -115,6 +146,10 @@ export default function StickyProductGallery() {
   const galleryArray = Array.isArray(gallery) ? gallery : [];
   const videosArray = Array.isArray(videos) ? videos : [];
   const orderArray = Array.isArray(mediaOrder) ? mediaOrder : [];
+  const hiddenVideoKeys = useMemo(
+    () => new Set(videosArray.filter((video) => video?.id).map(videoKey)),
+    [videosArray]
+  );
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
@@ -162,11 +197,14 @@ export default function StickyProductGallery() {
   }, [mediaItems, orderArray]);
 
   useEffect(() => {
-    const normalizedOrder = orderedItems.map((item) => item.key);
+    const visibleOrder = orderedItems.map((item) => item.key);
+    const normalizedOrder = videoAsCover
+      ? mergeVisibleOrder(orderArray, visibleOrder, hiddenVideoKeys)
+      : visibleOrder;
     if (normalizedOrder.join('|') !== orderArray.join('|')) {
       setValue('media_order', normalizedOrder, { shouldDirty: false });
     }
-  }, [orderedItems, orderArray, setValue]);
+  }, [orderedItems, orderArray, hiddenVideoKeys, setValue, videoAsCover]);
 
   useEffect(() => {
     if (activeIndex >= orderedItems.length) {
@@ -190,7 +228,12 @@ export default function StickyProductGallery() {
       .filter((item) => item.type === 'image')
       .map((item) => item.data);
 
-    setValue('media_order', reordered.map((item) => item.key), {
+    const visibleOrder = reordered.map((item) => item.key);
+    const nextOrder = videoAsCover
+      ? mergeVisibleOrder(orderArray, visibleOrder, hiddenVideoKeys)
+      : visibleOrder;
+
+    setValue('media_order', nextOrder, {
       shouldDirty: true,
     });
     setValue('image', orderedImages[0] || null, { shouldDirty: true });

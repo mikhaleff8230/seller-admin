@@ -21,6 +21,7 @@ const isSupportedVideo = (file: File) => {
 export default function VideoCoverCard() {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const coverPreferenceBeforeChangeRef = useRef<boolean | null>(null);
   const [localPreviewUrl, setLocalPreviewUrl] = useState('');
   const [error, setError] = useState('');
   const { watch, setValue, formState } = useFormContext<ProductEditorFormData>();
@@ -58,6 +59,12 @@ export default function VideoCoverCard() {
       serverStatus === 'pending' ||
       serverStatus === 'processing' ||
       serverStatus === 'failed');
+
+  useEffect(() => {
+    if (!hasSelectedFile && !removeVideo) {
+      coverPreferenceBeforeChangeRef.current = null;
+    }
+  }, [hasSelectedFile, removeVideo]);
 
   useEffect(() => {
     if (!hasSelectedFile) {
@@ -174,6 +181,7 @@ export default function VideoCoverCard() {
       return;
     }
 
+    coverPreferenceBeforeChangeRef.current = videoAsCover;
     setValue('video', file, { shouldDirty: true, shouldValidate: true });
     setValue('remove_video', false, { shouldDirty: true });
     setValue('video_as_cover', true, { shouldDirty: true });
@@ -188,10 +196,13 @@ export default function VideoCoverCard() {
       videoUploadError: '',
     });
     if (hasSelectedFile) {
+      const previousCover = coverPreferenceBeforeChangeRef.current ?? false;
       setValue('video', undefined, { shouldDirty: true });
       setValue('remove_video', false, { shouldDirty: true });
-      setValue('video_as_cover', Boolean(existingVideo), { shouldDirty: true });
+      setValue('video_as_cover', previousCover, { shouldDirty: true });
+      coverPreferenceBeforeChangeRef.current = null;
     } else if (existingVideo) {
+      coverPreferenceBeforeChangeRef.current = videoAsCover;
       setValue('remove_video', true, { shouldDirty: true });
       setValue('video_as_cover', false, { shouldDirty: true });
     }
@@ -200,8 +211,10 @@ export default function VideoCoverCard() {
 
   const undoRemoval = () => {
     if (isSaving) return;
+    const previousCover = coverPreferenceBeforeChangeRef.current ?? false;
     setValue('remove_video', false, { shouldDirty: true });
-    setValue('video_as_cover', true, { shouldDirty: true });
+    setValue('video_as_cover', previousCover, { shouldDirty: true });
+    coverPreferenceBeforeChangeRef.current = null;
   };
 
   return (
