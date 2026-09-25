@@ -1,4 +1,4 @@
-﻿import { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,38 +28,6 @@ type ProductEditorProps = {
 
 const DIGITAL_DELIVERY_ENABLED = false;
 
-const buildProductFormData = (
-  data: Record<string, unknown>,
-  video: File,
-  productId?: string | number
-) => {
-  const formData = new FormData();
-
-  Object.entries(data).forEach(([key, value]) => {
-    if (value === undefined) return;
-    if (value === null) {
-      formData.append(key, '');
-      return;
-    }
-    if (typeof value === 'boolean') {
-      formData.append(key, value ? '1' : '0');
-      return;
-    }
-    if (typeof value === 'object') {
-      formData.append(key, JSON.stringify(value));
-      return;
-    }
-    formData.append(key, String(value));
-  });
-
-  formData.set('video', video, video.name);
-  if (productId !== undefined) {
-    formData.set('id', String(productId));
-  }
-
-  return formData;
-};
-
 export default function ProductEditor({ initialProduct, productId }: ProductEditorProps) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -87,9 +55,12 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
     clearErrors,
     setError,
     errors,
+    setVideoUploadState,
   } = useProductEditorStore();
 
-  const { mutate: createProduct, isLoading: creating } = useCreateProductMutation();
+  const { mutate: createProduct, isLoading: creating } = useCreateProductMutation({
+    redirectOnSuccess: false,
+  });
   const { mutate: updateProductMutation, isLoading: updating } = useUpdateProductMutation();
   const [boostEnabled, setBoostEnabled] = React.useState(Boolean((initialProduct as any)?.boost_enabled));
   const [boostStatus, setBoostStatus] = React.useState(String((initialProduct as any)?.boost_status || 'off'));
@@ -939,13 +910,12 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
           : {}),
       };
 
-      const requestPayload = videoFile
-        ? buildProductFormData(submitData, videoFile, productId)
-        : submitData;
-      const updatePayload =
-        productId && !(requestPayload instanceof FormData)
-          ? { id: productId, ...requestPayload }
-          : requestPayload;
+      // Карточка всегда сохраняется отдельным JSON-запросом.
+      // Видео отправляется только после успешного сохранения карточки.
+      const requestPayload = submitData;
+      const updatePayload = productId
+        ? { id: productId, ...requestPayload }
+        : requestPayload;
 
       const syncVideoState = (response: any) => {
         if (response?.video_upload_error) {
@@ -968,6 +938,63 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
           ),
           { shouldDirty: false }
         );
+      };
+      const uploadVideoAfterCardSave = async (
+        targetProductId: string | number,
+        file: File,
+        asCover: boolean
+      ) => {
+        setVideoUploadState({
+          videoUploadStatus: 'uploading',
+          videoUploadProgress: 0,
+          videoUploadError: '',
+        });
+
+        try {
+          const mediaResponse = await productClient.uploadVideo(
+            targetProductId,
+            file,
+            asCover,
+            (progress) =>
+              setVideoUploadState({
+                videoUploadStatus: 'uploading',
+                videoUploadProgress: progress,
+                videoUploadError: '',
+              })
+          );
+
+          syncVideoState(mediaResponse);
+          setVideoUploadState({
+            videoUploadStatus: 'processing',
+            videoUploadProgress: 100,
+            videoUploadError: '',
+          });
+          toast.info(
+            'Карточка сохранена. Видео загружено и обрабатывается в фоне.'
+          );
+          return mediaResponse;
+        } catch (uploadError: any) {
+          const status = uploadError?.response?.status;
+          const responseData = uploadError?.response?.data;
+          const details =
+            responseData?.message ||
+            (responseData?.errors
+              ? String(Object.values(responseData.errors).flat()[0])
+              : '') ||
+            (status === 413
+              ? 'Видео превышает серверный лимит 50 МБ.'
+              : 'Проверьте интернет-соединение и повторите сохранение.');
+
+          setVideoUploadState({
+            videoUploadStatus: 'error',
+            videoUploadProgress: 0,
+            videoUploadError: details,
+          });
+          toast.error('Карточка сохранена, но видео не загрузилось. ' + details, {
+            autoClose: 8000,
+          });
+          return null;
+        }
       };
       
       // Дополнительная валидация перед отправкой (только при публикации)
@@ -1140,20 +1167,21 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
         const targetProductId = productId || targetProduct?.id;
 
         if (targetProductId && videoSettingsChanged) {
-          const mediaPayload = videoFile
-            ? buildProductFormData(
-                { video_as_cover: videoAsCover, remove_video: false },
-                videoFile,
-                targetProductId
-              )
-            : {
-                id: targetProductId,
-                video_as_cover: videoAsCover,
-                remove_video: removeVideo,
-              };
-          const mediaResponse = await productClient.update(mediaPayload as any);
-          syncVideoState(mediaResponse);
-          setProduct(mediaResponse);
+          if (videoFile) {
+            await uploadVideoAfterCardSave(
+              targetProductId,
+              videoFile,
+              videoAsCover
+            );
+          } else {
+            const mediaResponse = await productClient.update({
+              id: String(targetProductId),
+              video_as_cover: videoAsCover,
+              remove_video: removeVideo,
+            } as any);
+            syncVideoState(mediaResponse);
+            setProduct(mediaResponse);
+          }
         } else if (videoSettingsChanged) {
           toast.error('Товар создан, но вариант для загрузки видео не найден. Повторите сохранение.');
         }
@@ -1201,7 +1229,11 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
                 if (response) {
                   setProduct(response);
                 }
-                syncVideoState(response);
+                if (videoFile) {
+                  await uploadVideoAfterCardSave(productId, videoFile, videoAsCover);
+                } else {
+                  syncVideoState(response);
+                }
                 
                 // Обновляем slug в форме из ответа сервера
                 if (response?.slug) {
@@ -1276,7 +1308,11 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
               if (response) {
                 setProduct(response);
               }
-              syncVideoState(response);
+              if (response?.id && videoFile) {
+                await uploadVideoAfterCardSave(response.id, videoFile, videoAsCover);
+              } else {
+                syncVideoState(response);
+              }
               
               // Сохраняем код из slug ответа сервера
               if (response?.slug) {

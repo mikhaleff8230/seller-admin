@@ -14,12 +14,19 @@ import { mapPaginatorData } from '@/utils/data-mappers';
 import { Routes } from '@/config/routes';
 import { Config } from '@/config';
 
-export const useCreateProductMutation = () => {
+export const useCreateProductMutation = (
+  options: { redirectOnSuccess?: boolean } = {}
+) => {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { t } = useTranslation();
   return useMutation(productClient.create, {
     onSuccess: async (data) => {
+      if (options.redirectOnSuccess === false) {
+        queryClient.invalidateQueries(API_ENDPOINTS.PRODUCTS);
+        return;
+      }
+
       console.log('=== useCreateProductMutation - SUCCESS ===');
       console.log('Created product data:', data);
       console.log('Product slug:', data?.slug);

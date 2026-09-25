@@ -18,6 +18,18 @@ export type ProductEditorState = {
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
 
+  videoUploadStatus: 'idle' | 'uploading' | 'processing' | 'ready' | 'error';
+  videoUploadProgress: number;
+  videoUploadError: string;
+  setVideoUploadState: (
+    state: Partial<
+      Pick<
+        ProductEditorState,
+        'videoUploadStatus' | 'videoUploadProgress' | 'videoUploadError'
+      >
+    >
+  ) => void;
+
   // Ошибки
   errors: Record<string, string>;
   setError: (field: string, message: string) => void;
@@ -76,11 +88,18 @@ export const useProductEditorStore = create<ProductEditorState>((set, get) => ({
       errors: {},
       lastSaved: null,
       previewData: null,
+      videoUploadStatus: 'idle',
+      videoUploadProgress: 0,
+      videoUploadError: '',
     }),
 
   // Состояние загрузки
   isLoading: false,
   setIsLoading: (loading) => set({ isLoading: loading }),
+  videoUploadStatus: 'idle',
+  videoUploadProgress: 0,
+  videoUploadError: '',
+  setVideoUploadState: (state) => set(state),
 
   // Ошибки
   errors: {},

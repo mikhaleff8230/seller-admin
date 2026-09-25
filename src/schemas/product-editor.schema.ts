@@ -23,7 +23,7 @@ export const ProductVideoSchema = z.object({
   file_size: z.union([z.string(), z.number()]).nullable().optional(),
   mime_type: z.string().nullable().optional(),
   status: z.string().optional(),
-});
+  processing_error: z.string().nullable().optional(),});
 
 const VideoFileSchema = z.custom<File>(
   (value) => typeof File !== 'undefined' && value instanceof File,

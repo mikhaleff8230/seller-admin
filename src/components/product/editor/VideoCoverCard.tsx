@@ -2,6 +2,7 @@ import { ChangeEvent, useEffect, useId, useRef, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { ProductEditorFormData } from '@/schemas/product-editor.schema';
 import { useProductEditorStore } from '@/store/useProductEditorStore';
+import { productClient } from '@/data/client/product';
 
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024;
 const VIDEO_EXTENSIONS = ['mp4', 'mov', 'webm'];
@@ -23,7 +24,14 @@ export default function VideoCoverCard() {
   const [localPreviewUrl, setLocalPreviewUrl] = useState('');
   const [error, setError] = useState('');
   const { watch, setValue, formState } = useFormContext<ProductEditorFormData>();
-  const isSaving = useProductEditorStore((state) => state.isLoading);
+  const {
+    isLoading: isSaving,
+    product,
+    videoUploadStatus,
+    videoUploadProgress,
+    videoUploadError,
+    setVideoUploadState,
+  } = useProductEditorStore();
 
   const selectedVideo = watch('video');
   const videos = watch('videos');
@@ -35,6 +43,21 @@ export default function VideoCoverCard() {
   const videoOperationPending = Boolean(
     hasSelectedFile || removeVideo || formState.dirtyFields.video_as_cover
   );
+  const serverStatus = String(existingVideo?.status || '').toLowerCase();
+  const effectiveStatus =
+    videoUploadStatus !== 'idle'
+      ? videoUploadStatus
+      : serverStatus === 'pending' || serverStatus === 'processing'
+        ? 'processing'
+        : serverStatus === 'failed'
+          ? 'error'
+          : 'idle';
+  const showStatus =
+    effectiveStatus !== 'idle' &&
+    (videoUploadStatus !== 'idle' ||
+      serverStatus === 'pending' ||
+      serverStatus === 'processing' ||
+      serverStatus === 'failed');
 
   useEffect(() => {
     if (!hasSelectedFile) {
@@ -47,6 +70,73 @@ export default function VideoCoverCard() {
     return () => URL.revokeObjectURL(url);
   }, [hasSelectedFile, selectedVideo]);
 
+  useEffect(() => {
+    const productId = product?.id;
+    if (
+      !productId ||
+      (serverStatus !== 'pending' && serverStatus !== 'processing')
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let attempt = 0;
+
+    const poll = async () => {
+      try {
+        const response = await productClient.getVideoStatus(productId);
+        if (cancelled) return;
+
+        if (Array.isArray(response?.videos)) {
+          setValue('videos', response.videos, { shouldDirty: false });
+        }
+        if (typeof response?.video_as_cover !== 'undefined') {
+          setValue('video_as_cover', Boolean(response.video_as_cover), {
+            shouldDirty: false,
+          });
+        }
+
+        const status = String(response?.status || '').toLowerCase();
+        if (status === 'ready') {
+          setVideoUploadState({
+            videoUploadStatus: 'ready',
+            videoUploadProgress: 100,
+            videoUploadError: '',
+          });
+          return;
+        }
+        if (status === 'failed' || status === 'error') {
+          setVideoUploadState({
+            videoUploadStatus: 'error',
+            videoUploadProgress: 100,
+            videoUploadError:
+              response?.processing_error ||
+              'Видео не прошло проверку. Выберите файл заново.',
+          });
+          return;
+        }
+
+        attempt += 1;
+        if (attempt < 120) timer = setTimeout(poll, 2500);
+      } catch {
+        attempt += 1;
+        if (!cancelled && attempt < 120) timer = setTimeout(poll, 5000);
+      }
+    };
+
+    setVideoUploadState({
+      videoUploadStatus: 'processing',
+      videoUploadProgress: 100,
+      videoUploadError: '',
+    });
+    void poll();
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [product?.id, serverStatus, setValue, setVideoUploadState]);
   const existingVideoUrl =
     existingVideo?.video_url ||
     existingVideo?.url ||
@@ -65,6 +155,11 @@ export default function VideoCoverCard() {
     if (isSaving) return;
     const file = event.target.files?.[0];
     setError('');
+    setVideoUploadState({
+      videoUploadStatus: 'idle',
+      videoUploadProgress: 0,
+      videoUploadError: '',
+    });
     if (!file) return;
 
     if (!isSupportedVideo(file)) {
@@ -87,6 +182,11 @@ export default function VideoCoverCard() {
   const handleRemove = () => {
     if (isSaving) return;
     setError('');
+    setVideoUploadState({
+      videoUploadStatus: 'idle',
+      videoUploadProgress: 0,
+      videoUploadError: '',
+    });
     if (hasSelectedFile) {
       setValue('video', undefined, { shouldDirty: true });
       setValue('remove_video', false, { shouldDirty: true });
@@ -123,18 +223,76 @@ export default function VideoCoverCard() {
         </div>
       </div>
 
-      {isSaving && videoOperationPending && (
-        <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3" role="status">
+      {showStatus && (
+        <div
+          className={
+            'mt-3 rounded-lg border p-3 ' +
+            (effectiveStatus === 'error'
+              ? 'border-red-200 bg-red-50'
+              : effectiveStatus === 'ready'
+                ? 'border-green-200 bg-green-50'
+                : 'border-gray-200 bg-gray-50')
+          }
+          role="status"
+        >
           <div className="flex items-center justify-between gap-3 text-xs font-semibold text-heading">
-            <span>{removeVideo ? 'Удаляем видео…' : 'Загружаем и обрабатываем видео…'}</span>
-            <span>Подождите</span>
+            <span>
+              {effectiveStatus === 'uploading'
+                ? 'Загружаем видео'
+                : effectiveStatus === 'processing'
+                  ? 'Видео загружено — проверяем и готовим обложку'
+                  : effectiveStatus === 'ready'
+                    ? 'Видеообложка готова'
+                    : 'Видео не удалось подготовить'}
+            </span>
+            <span>
+              {effectiveStatus === 'uploading'
+                ? String(videoUploadProgress) + '%'
+                : effectiveStatus === 'processing'
+                  ? 'Можно продолжить работу'
+                  : effectiveStatus === 'ready'
+                    ? 'Готово'
+                    : 'Повторите загрузку'}
+            </span>
           </div>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-200">
-            <div className="h-full w-1/2 animate-pulse rounded-full bg-[#232323]" />
-          </div>
+          {(effectiveStatus === 'uploading' || effectiveStatus === 'processing') && (
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-200">
+              <div
+                className={
+                  'h-full rounded-full bg-[#232323] transition-all ' +
+                  (effectiveStatus === 'processing' ? 'animate-pulse' : '')
+                }
+                style={{
+                  width:
+                    effectiveStatus === 'processing'
+                      ? '100%'
+                      : String(Math.max(2, videoUploadProgress)) + '%',
+                }}
+              />
+            </div>
+          )}
+          {effectiveStatus === 'processing' && (
+            <p className="mb-0 mt-2 text-[11px] leading-4 text-gray-500">
+              Карточка уже сохранена. Обработка продолжится в фоне, страницу можно покинуть.
+            </p>
+          )}
+          {effectiveStatus === 'error' && (
+            <p className="mb-0 mt-2 text-[11px] leading-4 text-red-700">
+              {videoUploadError ||
+                existingVideo?.processing_error ||
+                'Карточка сохранена. Выберите видео заново и повторите сохранение.'}
+            </p>
+          )}
         </div>
       )}
 
+      {isSaving && videoOperationPending && effectiveStatus === 'idle' && (
+        <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3" role="status">
+          <p className="m-0 text-xs font-semibold text-heading">
+            {removeVideo ? 'Сохраняем удаление видео…' : 'Сначала сохраняем карточку…'}
+          </p>
+        </div>
+      )}
       {removeVideo ? (
         <div className="mt-3 rounded-lg border border-dashed border-red-200 bg-red-50 p-3">
           <p className="m-0 text-xs leading-5 text-red-700">
@@ -202,7 +360,7 @@ export default function VideoCoverCard() {
 
       {hasSelectedFile && !isSaving && (
         <p className="mb-0 mt-2 text-xs leading-5 text-gray-500">
-          Видео будет загружено после сохранения товара.
+          Сначала сохраним карточку, затем отдельно загрузим видео с отображением прогресса.
         </p>
       )}
 

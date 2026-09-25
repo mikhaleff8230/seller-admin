@@ -90,6 +90,33 @@ export const productClient = {
   generateDescription: (data: GenerateDescriptionInput) => {
     return HttpClient.post<any>(API_ENDPOINTS.GENERATE_DESCRIPTION, data);
   },
+  uploadVideo(
+    productId: string | number,
+    file: File,
+    videoAsCover: boolean,
+    onProgress?: (progress: number) => void
+  ) {
+    const formData = new FormData();
+    formData.set('video', file, file.name);
+    formData.set('video_as_cover', videoAsCover ? '1' : '0');
+
+    return HttpClient.post<any>(
+      API_ENDPOINTS.PRODUCTS + '/' + productId + '/video',
+      formData,
+      {
+        timeout: 10 * 60 * 1000,
+        onUploadProgress: (event: any) => {
+          if (!event.total) return;
+          onProgress?.(Math.min(100, Math.round((event.loaded * 100) / event.total)));
+        },
+      }
+    );
+  },
+  getVideoStatus(productId: string | number) {
+    return HttpClient.get<any>(
+      API_ENDPOINTS.PRODUCTS + '/' + productId + '/video-status'
+    );
+  },
   // Методы для работы с вариациями в визарде
   saveVariants: (data: { group_key: string; variants: any[] }) => {
     console.log('productClient.saveVariants - calling API', {
