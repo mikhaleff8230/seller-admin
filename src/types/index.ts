@@ -652,6 +652,7 @@ export interface Product {
     url: string;
   }[];
   videos?: ProductVideo[];
+  media_order?: string[];
   has_video_as_cover?: boolean;
   video_as_cover?: boolean;
   cover_video_id?: string | number | null;

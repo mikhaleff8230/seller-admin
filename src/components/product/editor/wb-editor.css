@@ -130,6 +130,7 @@
 }
 
 .wb-gallery-thumb {
+  position: relative;
   aspect-ratio: 3 / 4;
   border-radius: 8px;
   overflow: hidden;

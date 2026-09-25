@@ -273,6 +273,9 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
     tags: Array.isArray((initialProduct as any)?.tags) ? (initialProduct as any).tags : [],
     // variations: Array.isArray((initialProduct as any)?.variations) ? (initialProduct as any).variations : [], // Убрали - больше не используется
     videos: initialVideos,
+    media_order: Array.isArray((initialProduct as any)?.media_order)
+      ? (initialProduct as any).media_order
+      : [],
     video: undefined,
     video_as_cover: Boolean(
       initialProduct?.has_video_as_cover ?? initialProduct?.video_as_cover
@@ -330,6 +333,7 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
       group_variants: Array.isArray(defaultValues.group_variants) ? defaultValues.group_variants : [],
       // variations: Array.isArray(defaultValues.variations) ? defaultValues.variations : [], // Убрали - больше не используется
       videos: Array.isArray(defaultValues.videos) ? defaultValues.videos : [],
+      media_order: Array.isArray(defaultValues.media_order) ? defaultValues.media_order : [],
       video: undefined,
       video_as_cover: Boolean(defaultValues.video_as_cover),
       remove_video: false,
@@ -420,6 +424,7 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
                 internal_article: product.internal_article || '',
                 gallery: product.gallery || [],
                 image: product.image || null,
+                media_order: Array.isArray(product.media_order) ? product.media_order : [],
               }));
               
               // Обновляем форму с загруженными вариантами
@@ -514,6 +519,9 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
         video: videoFile,
         video_as_cover: videoAsCover,
         remove_video: removeVideo,
+        media_order: Array.isArray(data.media_order)
+          ? data.media_order
+          : [],
         is_external: Boolean((data as any).is_external),
         external_product_url: (data as any).external_product_url || '',
         digital_file_input: (data as any).digital_file_input,
@@ -868,6 +876,9 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
         // Видео-метаданные; сам File добавляется в FormData ниже
         video_as_cover: videoAsCover,
         remove_video: removeVideo,
+        media_order: Array.isArray(normalizedData.media_order)
+          ? normalizedData.media_order
+          : [],
         // Производитель (manufacturer_id)
         ...(manufacturerId ? { manufacturer_id: manufacturerId } : {}),
         // ВАЖНО: Отправляем slug_numeric_code отдельно (только для существующих товаров)
@@ -1107,6 +1118,7 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
               sku: normalizedData.sku || oldVariant.sku || '',
               attributes: normalizedData.attribute_values || oldVariant.attributes || {},
               gallery: galleryArray.length > 0 ? galleryArray : (oldVariant.gallery || []),
+              media_order: normalizedData.media_order || oldVariant.media_order || [],
             };
             
             console.log('ProductEditor - Updated variant in group:', {
@@ -1139,6 +1151,7 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
               sku: normalizedData.sku || initialProduct?.sku || '',
               attributes: normalizedData.attribute_values || {},
               gallery: galleryArray,
+              media_order: normalizedData.media_order || [],
             });
             
             console.log('ProductEditor - Added variant to group:', {
@@ -1481,6 +1494,9 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
           ...(variant.gallery && Array.isArray(variant.gallery) && variant.gallery.length > 0
             ? { gallery: variant.gallery }
             : {}),
+          ...(Array.isArray(variant.media_order)
+            ? { media_order: variant.media_order }
+            : {}),
           ...(variant.attributes && typeof variant.attributes === 'object' && Object.keys(variant.attributes).length > 0
             ? { 
                 attribute_values: Object.entries(variant.attributes).reduce((acc: any, [key, value]) => {
@@ -1535,6 +1551,7 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
             internal_article: product.internal_article || '',
             gallery: product.gallery || [],
             image: product.image || null,
+            media_order: Array.isArray(product.media_order) ? product.media_order : [],
           }));
           
           methods.setValue('group_variants', loadedVariants);
