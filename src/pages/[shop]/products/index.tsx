@@ -73,6 +73,13 @@ export default function ProductsPage() {
     }
   }, [query.group_key]);
 
+  useEffect(() => {
+    if (typeof query.search === 'string') {
+      setSearchTerm(query.search);
+      setPage(1);
+    }
+  }, [query.search]);
+
   // Кнопка открытия-скрытия фильтров закомментирована - фильтры всегда открыты
   // const toggleVisible = () => {
   //   setVisible((v) => !v);

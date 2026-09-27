@@ -13,7 +13,7 @@ const ShopLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
   return (
     <div
-      className="flex min-h-screen flex-col bg-gray-100 transition-colors duration-150"
+      className="flex min-h-screen flex-col bg-[#f4f7fb] transition-colors duration-150"
       dir={dir}
     >
       <Navbar />
@@ -23,11 +23,11 @@ const ShopLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       </MobileNavigation>
 
       <div className="flex flex-1 pt-20">
-        <aside className="seller-sidebar-scroll xl:w-76 fixed bottom-0 hidden h-full w-72 overflow-y-auto bg-white px-4 pt-20 shadow ltr:left-0 ltr:right-auto rtl:right-0 rtl:left-auto lg:block">
+        <aside className="seller-sidebar-scroll fixed bottom-0 hidden h-full w-[264px] overflow-y-auto border-r border-[#edf0f5] bg-white px-4 pt-20 ltr:left-0 ltr:right-auto rtl:right-0 rtl:left-auto lg:block">
           <OwnerInformation />
         </aside>
-        <main className="ltr:xl:pl-76 rtl:xl:pr-76 w-full ltr:lg:pl-72 rtl:lg:pr-72 rtl:lg:pl-0">
-          <div className="h-full p-5 md:p-8">{children}</div>
+        <main className="w-full ltr:lg:pl-[264px] rtl:lg:pr-[264px] rtl:lg:pl-0">
+          <div className="h-full p-3 sm:p-4 lg:p-5 xl:p-6">{children}</div>
         </main>
       </div>
     </div>
