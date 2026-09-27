@@ -27,6 +27,7 @@ export default function SellerChatPage() {
   const queryClient = useQueryClient();
   const { data: me } = useMeQuery();
   const selectedId = typeof router.query.id === 'string' ? router.query.id : '';
+  const selectedShopId = typeof router.query.shop_id === 'string' ? router.query.shop_id : '';
   const [search, setSearch] = useState('');
   const [body, setBody] = useState('');
   const [files, setFiles] = useState<File[]>([]);
@@ -101,7 +102,7 @@ export default function SellerChatPage() {
           {conversationsLoading ? <div className="p-6 text-center text-sm text-muted">Загрузка…</div> : null}
           {!conversationsLoading && !filtered.length ? <div className="p-8 text-center text-sm text-muted">Диалогов пока нет</div> : null}
           {filtered.map((item) => (
-            <button key={item.id} type="button" onClick={() => router.push({ pathname: '/chat', query: { id: item.id } }, undefined, { shallow: true })} className={`flex w-full gap-3 border-b border-gray-100 p-4 text-left transition hover:bg-gray-50 ${String(item.id) === selectedId ? 'bg-gray-100' : ''}`}>
+            <button key={item.id} type="button" onClick={() => router.push({ pathname: '/chat', query: { id: item.id, ...(selectedShopId ? { shop_id: selectedShopId } : {}) } }, undefined, { shallow: true })} className={`flex w-full gap-3 border-b border-gray-100 p-4 text-left transition hover:bg-gray-50 ${String(item.id) === selectedId ? 'bg-gray-100' : ''}`}>
               <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#232323] font-bold text-white">
                 {nameFor(item).charAt(0).toUpperCase()}
                 {Number(item.unseen) > 0 ? <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px]">{Number(item.unseen) > 99 ? '99+' : item.unseen}</span> : null}
@@ -119,7 +120,7 @@ export default function SellerChatPage() {
         {!selectedId ? <div className="flex h-full items-center justify-center bg-gray-50 p-8 text-center text-muted">Выберите диалог слева</div> : (
           <>
             <header className="flex h-[68px] shrink-0 items-center gap-3 border-b border-gray-200 px-4">
-              <button type="button" className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 md:hidden" onClick={() => router.push('/chat', undefined, { shallow: true })} aria-label="Назад">←</button>
+              <button type="button" className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 md:hidden" onClick={() => router.push({ pathname: '/chat', query: selectedShopId ? { shop_id: selectedShopId } : {} }, undefined, { shallow: true })} aria-label="Назад">←</button>
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#232323] font-bold text-white">{nameFor(conversation).charAt(0).toUpperCase()}</span>
               <div className="min-w-0"><h2 className="truncate font-bold text-heading">{nameFor(conversation)}</h2><p className="text-xs text-muted">Диалог SANCAN</p></div>
             </header>

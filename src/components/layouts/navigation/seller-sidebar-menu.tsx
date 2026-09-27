@@ -13,6 +13,7 @@ export default function SellerSidebarMenu() {
   const router = useRouter();
   const { data: me } = useMeQuery();
   const [availableShops, setAvailableShops] = useState<any[]>([]);
+  const [rememberedShopId, setRememberedShopId] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const selectedShopId = typeof router.query.shop_id === 'string' ? router.query.shop_id : '';
   const routeShopSlug = typeof router.query.shop === 'string' ? router.query.shop : '';
@@ -41,10 +42,27 @@ export default function SellerSidebarMenu() {
     () => Array.from(new Map(availableShops.map((shop) => [String(shop.id), shop])).values()),
     [availableShops]
   );
+
+  useEffect(() => {
+    setRememberedShopId(window.localStorage.getItem('sancan.active_shop_id') || '');
+  }, []);
+
   const selectedShop = shops.find((shop: any) => String(shop.id) === selectedShopId)
-    || shops.find((shop: any) => shop.slug === routeShopSlug);
+    || shops.find((shop: any) => shop.slug === routeShopSlug)
+    || shops.find((shop: any) => String(shop.id) === rememberedShopId)
+    || shops[0];
   const shopSlug = selectedShop?.slug;
   const promotionHref = selectedShop ? `${Routes.promotion}?shop_id=${selectedShop.id}` : Routes.promotion;
+  const chatHref = selectedShop ? `${Routes.chat}?shop_id=${selectedShop.id}` : Routes.chat;
+  const paymentProfilesHref = selectedShop ? `${Routes.paymentProfiles}?shop_id=${selectedShop.id}` : Routes.paymentProfiles;
+  const xmlImportHref = selectedShop ? `${Routes.xmlImport.list}?shop_id=${selectedShop.id}` : Routes.xmlImport.list;
+
+  useEffect(() => {
+    if (!selectedShop?.id) return;
+    const value = String(selectedShop.id);
+    window.localStorage.setItem('sancan.active_shop_id', value);
+    if (value !== rememberedShopId) setRememberedShopId(value);
+  }, [selectedShop?.id, rememberedShopId]);
   const { data: chatData } = useQuery(
     ['chat-conversations', 'navbar'],
     () => HttpClient.get<any>('/chat/conversations'),
@@ -67,7 +85,7 @@ export default function SellerSidebarMenu() {
     { href: `/${shopSlug}`, label: 'Дашборд', icon: 'DashboardIcon', active: router.pathname === '/[shop]' },
     { href: `/${shopSlug}${Routes.product.list}`, label: 'Товары', icon: 'ProductsIcon', active: router.pathname.includes('/products') },
     { href: `/${shopSlug}${Routes.order.list}`, label: 'Заказы', icon: 'OrdersIcon', active: router.pathname.includes('/orders') },
-    { href: Routes.chat, label: 'Чаты', icon: 'ChatIcon', active: router.pathname === Routes.chat, badge: unreadMessages },
+    { href: chatHref, label: 'Чаты', icon: 'ChatIcon', active: router.pathname === Routes.chat, badge: unreadMessages },
     { href: promotionHref, label: 'Продвижение', icon: 'DashboardIcon', active: router.pathname === Routes.promotion && router.query.view !== 'statistics' },
     { href: `${promotionHref}&view=statistics`, label: 'Статистика', icon: 'OrdersIcon', active: router.pathname === Routes.promotion && router.query.view === 'statistics' },
     { href: `/${shopSlug}${Routes.reviews.list}`, label: 'Отзывы', icon: 'ReviewIcon', active: router.pathname.includes('/reviews') },
@@ -81,9 +99,9 @@ export default function SellerSidebarMenu() {
   ];
   const settingsItems = shopSlug ? [
     { href: `/${shopSlug}/edit`, label: 'Настройки магазина', icon: 'ShopIcon', active: router.pathname === '/[shop]/edit' },
-    { href: Routes.paymentProfiles, label: 'Профиль СБП', icon: 'TaxesIcon', active: router.pathname === Routes.paymentProfiles },
+    { href: paymentProfilesHref, label: 'Профиль СБП', icon: 'TaxesIcon', active: router.pathname === Routes.paymentProfiles },
     { href: `/${shopSlug}${Routes.staff.list}`, label: 'Менеджеры', icon: 'UsersIcon', active: router.pathname.includes('/staffs') },
-    { href: Routes.xmlImport.list, label: 'Импорт XML / CSV', icon: 'ImportIcon', active: router.pathname === Routes.xmlImport.list },
+    { href: xmlImportHref, label: 'Импорт XML / CSV', icon: 'ImportIcon', active: router.pathname === Routes.xmlImport.list },
   ] : [];
 
   return (
