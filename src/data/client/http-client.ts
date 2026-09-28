@@ -104,15 +104,21 @@ Axios.interceptors.response.use(
     const isExplicitAuthError = message === 'PICKBAZAR_ERROR.NOT_AUTHORIZED';
     const isPermissionError = status === 403 && hasToken && !isExplicitAuthError; // 403 с токеном - ошибка прав доступа
     const isUnauthorizedError = status === 401 && !isProductCreateUpdate; // 401 - ошибка авторизации (кроме создания товара)
+    const isLocallyHandledPermissionError =
+      message === 'SELLER_SELF_REGISTRATION_REQUIRED';
     
     // Показываем уведомление при ошибке прав доступа (403 с токеном)
     if (isPermissionError) {
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          'Недостаточно прав для выполнения этого действия';
-      toast.error(errorMessage, {
-        autoClose: 5000,
-      });
+      // Onboarding renders a contextual, translated explanation next to the
+      // submit button. Do not duplicate it with an internal backend code.
+      if (!isLocallyHandledPermissionError) {
+        const errorMessage = error.response?.data?.message ||
+                            error.response?.data?.error ||
+                            'Недостаточно прав для выполнения этого действия';
+        toast.error(errorMessage, {
+          autoClose: 5000,
+        });
+      }
       console.warn('Permission error (403 with token):', {
         status: error.response?.status,
         url: error.config?.url,
