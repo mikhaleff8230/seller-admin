@@ -77,6 +77,7 @@ export default function Uploader({
   multiple,
   acceptFile,
   acceptVideo,
+  acceptSvg,
   helperText,
   maxSize
 }: any) {
@@ -99,6 +100,10 @@ export default function Uploader({
     acceptConfig = ACCEPTED_VIDEO_TYPES;
   } else if (acceptFile) {
     acceptConfig = ACCEPTED_FILE_TYPES;
+  } else if (acceptSvg) {
+    acceptConfig = {
+      'image/svg+xml': ['.svg'],
+    };
   } else {
     acceptConfig = {
       'image/*': ['.jpg', '.jpeg', '.png', '.webp'],
@@ -275,6 +280,7 @@ export default function Uploader({
       'webp',
       'gif',
       'png',
+      'svg',
       'eps',
       'raw',
     ];

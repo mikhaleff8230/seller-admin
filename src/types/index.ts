@@ -225,6 +225,8 @@ export interface Category {
   children: Category[];
   details?: string;
   image?: Attachment;
+  menu_icon?: Attachment;
+  menu_banner?: Attachment;
   icon?: string;
   type: Type;
   products: Product[];
@@ -938,6 +940,8 @@ export interface CreateTagInput {
   type?: ConnectTypeBelongsTo;
   details?: string;
   image?: AttachmentInput;
+  menu_icon?: AttachmentInput;
+  menu_banner?: AttachmentInput;
   icon?: string;
 }
 

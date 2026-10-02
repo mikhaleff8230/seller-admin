@@ -7,6 +7,7 @@ interface FileInputProps {
   multiple?: boolean;
   acceptFile?: boolean;
   acceptVideo?: boolean;
+  acceptSvg?: boolean;
   helperText?: string;
   defaultValue?: any;
   maxSize?: number;
@@ -18,6 +19,7 @@ const FileInput = ({
   multiple = true,
   acceptFile = false,
   acceptVideo = false,
+  acceptSvg = false,
   helperText,
   defaultValue = [],
   maxSize,
@@ -33,6 +35,7 @@ const FileInput = ({
           multiple={multiple}
           acceptFile={acceptFile}
           acceptVideo={acceptVideo}
+          acceptSvg={acceptSvg}
           helperText={helperText}
           maxSize={maxSize}
         />

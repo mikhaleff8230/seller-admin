@@ -136,6 +136,8 @@ type FormValues = {
   details: string;
   parent: any;
   image: any;
+  menu_icon: any;
+  menu_banner: any;
   icon: any;
   status: string;
   sort_order: number | string;
@@ -144,6 +146,8 @@ type FormValues = {
 
 const defaultValues = {
   image: [],
+  menu_icon: [],
+  menu_banner: [],
   name: '',
   slug: '',
   details: '',
@@ -245,6 +249,16 @@ export default function CreateOrUpdateCategoriesForm({
         original: values?.image?.original,
         id: values?.image?.id,
       },
+      menu_icon: values?.menu_icon?.original ? {
+        thumbnail: values.menu_icon.thumbnail,
+        original: values.menu_icon.original,
+        id: values.menu_icon.id,
+      } : null,
+      menu_banner: values?.menu_banner?.original ? {
+        thumbnail: values.menu_banner.thumbnail,
+        original: values.menu_banner.original,
+        id: values.menu_banner.id,
+      } : null,
       icon: values.icon?.value || '',
       parent: values.parent?.id ?? null,
       status: values.status,
@@ -278,6 +292,39 @@ export default function CreateOrUpdateCategoriesForm({
 
         <Card className="w-full sm:w-8/12 md:w-2/3">
           <FileInput name="image" control={control} multiple={false} />
+        </Card>
+      </div>
+
+      <div className="my-5 flex flex-wrap border-b border-dashed border-border-base pb-8 sm:my-8">
+        <Description
+          title="Иконка категории в каталоге"
+          details="Загрузите SVG-иконку. Она отображается слева от названия категории в выпадающем меню каталога."
+          className="w-full px-0 pb-5 sm:w-4/12 sm:py-8 sm:pe-4 md:w-1/3 md:pe-5"
+        />
+        <Card className="w-full sm:w-8/12 md:w-2/3">
+          <FileInput
+            name="menu_icon"
+            control={control}
+            multiple={false}
+            acceptSvg
+            helperText="SVG, рекомендуемый размер 48×48 px"
+          />
+        </Card>
+      </div>
+
+      <div className="my-5 flex flex-wrap border-b border-dashed border-border-base pb-8 sm:my-8">
+        <Description
+          title="Фото мини-баннера"
+          details="Вертикальное фото для редакционного блока каталога и изображения категории в горизонтальной ленте. Текст берётся из поля «Описание»."
+          className="w-full px-0 pb-5 sm:w-4/12 sm:py-8 sm:pe-4 md:w-1/3 md:pe-5"
+        />
+        <Card className="w-full sm:w-8/12 md:w-2/3">
+          <FileInput
+            name="menu_banner"
+            control={control}
+            multiple={false}
+            helperText="JPG, PNG или WebP, рекомендуемое соотношение 4:5"
+          />
         </Card>
       </div>
 
