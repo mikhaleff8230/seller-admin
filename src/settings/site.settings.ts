@@ -149,12 +149,23 @@ export const siteSettings = {
         icon: 'ImportIcon',
       },
       {
+        href: '/telegram-import',
+        label: 'Telegram Import',
+        icon: 'ImportIcon',
+      },
+      {
         href: '/place-import',
         label: 'sidebar-nav-item-place-import',
         icon: 'ImportIcon',
       },
     ],
     shop: [
+      {
+        href: (_shop: string) => '/telegram-import',
+        label: 'Telegram Import',
+        icon: 'ImportIcon',
+        permissions: adminAndOwnerOnly,
+      },
       {
         href: (_shop: string) => Routes.promotion,
         label: 'Продвижение',
