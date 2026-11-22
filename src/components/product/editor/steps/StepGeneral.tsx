@@ -29,6 +29,7 @@ export default function StepGeneral() {
   const name = watch('name');
   const slug = watch('slug');
   const categoryIds = watch('category_ids');
+  const selectedType = watch('type_id') as any;
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSlugDisable, setIsSlugDisable] = useState<boolean>(true);
   
@@ -196,6 +197,24 @@ export default function StepGeneral() {
       <div className="max-w-md">
         <ProductTypeSelect control={control} error={errors.type_id?.message} />
       </div>
+
+      {(() => {
+        const typeName = String(selectedType?.name || product?.type?.name || '').toLowerCase();
+        const isMarketplaceSource = typeName.includes('ozon') || typeName.includes('озон') || typeName.includes('wildberries');
+        if (!isMarketplaceSource) return null;
+        return (
+          <div className="max-w-2xl">
+            <Input
+              label={typeName.includes('ozon') || typeName.includes('озон') ? 'Внешний URL Ozon' : 'Внешний URL Wildberries'}
+              {...register('preview_url')}
+              error={errors.preview_url?.message}
+              variant="outline"
+              floatingLabel
+            />
+            <p className="mt-1 text-xs text-gray-500">Ссылка на источник; кнопку покупки SANCAN она не заменяет.</p>
+          </div>
+        );
+      })()}
 
       {/* Артикул продавца - перед Брендом */}
       <div className="max-w-[224px]">

@@ -57,6 +57,11 @@ const LoginForm = () => {
   const { mutate: otpLogin } = useOtpLogin();
   const { mutate: verifyPin } = useVerifyPinCode();
 
+  const destinationAfterLogin = (permissions: string[]) => {
+    const next = typeof Router.query.next === 'string' ? Router.query.next : '';
+    return next.startsWith('/') && !next.startsWith('//') ? next : sellerEntry(permissions);
+  };
+
   useEffect(() => {
     // Страница входа должна начинаться с чистой сессии. Иначе просроченный
     // токен попадает даже в публичные запросы и создаёт непонятные 403.
@@ -74,7 +79,7 @@ const LoginForm = () => {
           if (data?.token) {
             if (hasAccess(allowedRoles, data?.permissions)) {
               setAuthCredentials(data?.token, data?.permissions);
-              Router.push(sellerEntry(data?.permissions));
+              Router.push(destinationAfterLogin(data?.permissions));
               return;
             }
             setErrorMessage('form:error-enough-permission');
@@ -145,7 +150,7 @@ const LoginForm = () => {
           if (data?.token) {
             if (hasAccess(allowedRoles, data?.permissions)) {
               setAuthCredentials(data?.token, data?.permissions);
-              Router.push(sellerEntry(data?.permissions));
+              Router.push(destinationAfterLogin(data?.permissions));
               return;
             }
             setOtpError('Недостаточно прав доступа');
@@ -193,7 +198,7 @@ const LoginForm = () => {
           if (data?.token) {
             if (hasAccess(allowedRoles, data?.permissions)) {
               setAuthCredentials(data?.token, data?.permissions);
-              Router.push(sellerEntry(data?.permissions));
+              Router.push(destinationAfterLogin(data?.permissions));
               return;
             }
             setPinError('Недостаточно прав доступа');

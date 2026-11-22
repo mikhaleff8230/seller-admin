@@ -12,6 +12,7 @@ type CategorySelectModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (categoryId: number) => void;
+  onConfirm?: (categoryId: number) => void;
   selectedCategoryId?: number;
 };
 
@@ -19,6 +20,7 @@ export default function CategorySelectModal({
   isOpen,
   onClose,
   onSelect,
+  onConfirm,
   selectedCategoryId,
 }: CategorySelectModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -215,7 +217,11 @@ export default function CategorySelectModal({
   // Обработка подтверждения выбора
   const handleConfirm = () => {
     if (selectedCategoryId) {
-      onSelect(selectedCategoryId);
+      if (onConfirm) {
+        onConfirm(selectedCategoryId);
+      } else {
+        onSelect(selectedCategoryId);
+      }
       onClose();
     }
   };

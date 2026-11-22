@@ -28,6 +28,31 @@ type ProductEditorProps = {
 
 const DIGITAL_DELIVERY_ENABLED = false;
 
+const formatInitialVariationAxes = (values: any[] = []) => {
+  const grouped = new Map<string, { attribute: any; value: any[] }>();
+  values.forEach((value) => {
+    const attribute = value?.attribute;
+    if (!attribute?.id) return;
+    const key = String(attribute.id);
+    const row = grouped.get(key) || { attribute, value: [] };
+    row.value.push({ id: value.id, value: value.value, meta: value.meta });
+    grouped.set(key, row);
+  });
+  return Array.from(grouped.values());
+};
+
+const normalizeInitialVariationOptions = (values: any[] = []) =>
+  values.map((option) => ({
+    ...option,
+    id: option?.id != null ? String(option.id) : undefined,
+    price: Number(option?.price || 0),
+    sale_price: option?.sale_price == null || option?.sale_price === '' ? null : Number(option.sale_price),
+    quantity: Number(option?.quantity || 0),
+    stock_status: option?.stock_status || 'known',
+    is_disable: Boolean(option?.is_disable),
+    options: Array.isArray(option?.options) ? option.options : [],
+  }));
+
 export default function ProductEditor({ initialProduct, productId }: ProductEditorProps) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -182,7 +207,7 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
     is_external: Boolean((initialProduct as any)?.is_external),
     external_product_url: (initialProduct as any)?.external_product_url || '',
     digital_product_type:
-      ((initialProduct as any)?.digital_product_type as string) || 'file',
+      ((initialProduct as any)?.digital_product_type as ProductEditorFormData['digital_product_type']) || 'file',
     prompt_text: (initialProduct as any)?.prompt_text || '',
     external_url: (initialProduct as any)?.external_url || '',
     digital_license_keys: (initialProduct as any)?.digital_license_keys || '',
@@ -269,9 +294,15 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
     group_variants: Array.isArray((initialProduct as any)?.group_variants) 
       ? (initialProduct as any).group_variants 
       : [],
-    brand: initialProduct?.manufacturer?.name || (initialProduct as any)?.brand || '',
+    brand: (initialProduct as any)?.manufacturer?.name || (initialProduct as any)?.brand || '',
     tags: Array.isArray((initialProduct as any)?.tags) ? (initialProduct as any).tags : [],
-    // variations: Array.isArray((initialProduct as any)?.variations) ? (initialProduct as any).variations : [], // Убрали - больше не используется
+    product_type: (initialProduct as any)?.product_type === 'variable' ? 'variable' : 'simple',
+    variations: formatInitialVariationAxes(
+      Array.isArray((initialProduct as any)?.variations) ? (initialProduct as any).variations : []
+    ),
+    variation_options: normalizeInitialVariationOptions(
+      Array.isArray((initialProduct as any)?.variation_options) ? (initialProduct as any).variation_options : []
+    ),
     videos: initialVideos,
     media_order: Array.isArray((initialProduct as any)?.media_order)
       ? (initialProduct as any).media_order
@@ -330,8 +361,9 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
       category_ids: Array.isArray(defaultValues.category_ids) ? defaultValues.category_ids : [],
       gallery: Array.isArray(defaultValues.gallery) ? defaultValues.gallery : [],
       tags: Array.isArray(defaultValues.tags) ? defaultValues.tags : [],
-      group_variants: Array.isArray(defaultValues.group_variants) ? defaultValues.group_variants : [],
-      // variations: Array.isArray(defaultValues.variations) ? defaultValues.variations : [], // Убрали - больше не используется
+      group_variants: (Array.isArray(defaultValues.group_variants) ? defaultValues.group_variants : []) as any,
+      variations: Array.isArray(defaultValues.variations) ? defaultValues.variations : [],
+      variation_options: Array.isArray(defaultValues.variation_options) ? defaultValues.variation_options : [],
       videos: Array.isArray(defaultValues.videos) ? defaultValues.videos : [],
       media_order: Array.isArray(defaultValues.media_order) ? defaultValues.media_order : [],
       video: undefined,
@@ -484,8 +516,8 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
       let galleryArray = Array.isArray(data.gallery) ? data.gallery : [];
       const tagsArray = Array.isArray(data.tags) ? data.tags : [];
       const groupVariantsArray = Array.isArray(data.group_variants) ? data.group_variants : [];
-      // Убрали variations - больше не используется
-      // const variationsArray = Array.isArray(data.variations) ? data.variations : [];
+      const variationsArray = Array.isArray(data.variations) ? data.variations : [];
+      const variationOptionsArray = Array.isArray(data.variation_options) ? data.variation_options : [];
       const videosArray = Array.isArray(data.videos) ? data.videos : [];
       const videoFile =
         typeof File !== 'undefined' && data.video instanceof File ? data.video : null;
@@ -514,7 +546,8 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
         gallery: galleryArray,
         tags: tagsArray,
         group_variants: groupVariantsArray,
-        // variations: variationsArray, // Убрали - больше не используется
+        variations: variationsArray,
+        variation_options: variationOptionsArray,
         videos: videosArray,
         video: videoFile,
         video_as_cover: videoAsCover,
@@ -720,7 +753,7 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
             // Создаем новый manufacturer
             const newManufacturer = await manufacturerClient.create({
               name: normalizedData.brand.trim(),
-              type_id: typeId, // Используем type_id товара
+              type_id: typeId!, // Используем type_id товара
               language: router.locale || 'ru',
               shop_id: String(shopId),
             });
@@ -734,8 +767,20 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
         }
       }
       
-      // Все товары теперь simple (убрали вариативный товар)
-      const productType = 'simple';
+      const productType = normalizedData.product_type === 'variable' ? 'variable' : 'simple';
+      if (publish && productType === 'variable') {
+        if (!normalizedData.variations.length || !normalizedData.variation_options.length) {
+          toast.error('Сформируйте хотя бы одну вариацию товара перед публикацией');
+          setIsLoading(false);
+          return;
+        }
+        const enabledOptions = normalizedData.variation_options.filter((option: any) => !option?.is_disable);
+        if (!enabledOptions.length) {
+          toast.error('Перед публикацией включите хотя бы один доступный SKU');
+          setIsLoading(false);
+          return;
+        }
+      }
       
       // Обработка slug с сохранением кода
       // ВАЖНО: Отправляем только базовый slug БЕЗ кода
@@ -791,7 +836,9 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
         sale_price: normalizedData.sale_price ?? null,
         quantity: normalizedData.quantity ?? 0,
         sku: normalizedData.sku || '',
-        preview_url: DIGITAL_DELIVERY_ENABLED ? normalizedData.preview_url || '' : '',
+        // preview_url is the existing source URL field used by Ozon/WB products.
+        // It is independent from the currently disabled digital delivery feature.
+        preview_url: normalizedData.preview_url || '',
         is_digital: DIGITAL_DELIVERY_ENABLED,
         ...(DIGITAL_DELIVERY_ENABLED
           ? {
@@ -821,6 +868,49 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
         shop_id: shopId ? String(shopId) : undefined,
         language: router.locale || 'ru',
         product_type: productType,
+        ...(productType === 'variable'
+          ? {
+              variations: normalizedData.variations.flatMap((axis: any) =>
+                (axis?.value || []).map((value: any) => value?.id).filter(Boolean)
+              ),
+              variation_options: {
+                upsert: normalizedData.variation_options.map((option: any, optionIndex: number) => ({
+                  ...(option?.id ? { id: String(option.id) } : {}),
+                  title: option?.title || (option?.options || []).map((item: any) => item?.value).filter(Boolean).join(' / '),
+                  price: String(Number(option?.price || 0)),
+                  sale_price:
+                    option?.sale_price === null || option?.sale_price === '' || option?.sale_price === undefined
+                      ? null
+                      : String(Number(option.sale_price)),
+                  quantity: Math.max(0, Number(option?.quantity || 0)),
+                  stock_status: option?.stock_status || (option?.is_disable ? 'unknown' : 'known'),
+                  sku: String(
+                    option?.sku ||
+                      `${normalizedData.sku || `PRODUCT${productId || 'NEW'}`}V${optionIndex + 1}`
+                  ).replace(/[^a-zA-Z0-9_-]/g, ''),
+                  is_disable: Boolean(option?.is_disable),
+                  is_digital: Boolean(option?.is_digital),
+                  options: (option?.options || []).map((item: any) => ({
+                    name: String(item?.name || ''),
+                    value: String(item?.value || ''),
+                  })),
+                  ...(option?.image ? { image: option.image } : {}),
+                })),
+                delete: (Array.isArray((initialProduct as any)?.variation_options)
+                  ? (initialProduct as any).variation_options
+                  : []
+                )
+                  .map((option: any) => option?.id)
+                  .filter(
+                    (id: any) =>
+                      id != null &&
+                      !normalizedData.variation_options.some(
+                        (option: any) => String(option?.id || '') === String(id)
+                      )
+                  ),
+              },
+            }
+          : {}),
         ...(DIGITAL_DELIVERY_ENABLED && !normalizedData.is_external && normalizedData.digital_file_input?.id
           ? {
               digital_file: {
@@ -1121,7 +1211,9 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
               sale_price: normalizedData.sale_price ?? oldVariant.sale_price ?? null,
               quantity: normalizedData.quantity ?? oldVariant.quantity ?? 0,
               sku: normalizedData.sku || oldVariant.sku || '',
-              attributes: normalizedData.attribute_values || oldVariant.attributes || {},
+              attributes: normalizedData.attribute_values
+                ? Object.fromEntries(Object.entries(normalizedData.attribute_values).map(([key, value]) => [key, Array.isArray(value) ? value.join(',') : value]))
+                : oldVariant.attributes || {},
               gallery: galleryArray.length > 0 ? galleryArray : (oldVariant.gallery || []),
               media_order: normalizedData.media_order || oldVariant.media_order || [],
             };
@@ -1154,7 +1246,7 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
               sale_price: normalizedData.sale_price ?? initialProduct?.sale_price ?? null,
               quantity: normalizedData.quantity ?? initialProduct?.quantity ?? 0,
               sku: normalizedData.sku || initialProduct?.sku || '',
-              attributes: normalizedData.attribute_values || {},
+              attributes: Object.fromEntries(Object.entries(normalizedData.attribute_values || {}).map(([key, value]) => [key, Array.isArray(value) ? value.join(',') : value])),
               gallery: galleryArray,
               media_order: normalizedData.media_order || [],
             });
@@ -1642,6 +1734,7 @@ export default function ProductEditor({ initialProduct, productId }: ProductEdit
         creating={creating}
         updating={updating}
         productId={productId}
+        shopId={shopId}
         boostEnabled={boostEnabled}
         boostStatus={boostStatus}
         boostBalance={boostBalance}
@@ -1657,6 +1750,7 @@ function ProductEditorContent({
   creating,
   updating,
   productId,
+  shopId,
   boostEnabled,
   boostStatus,
   boostBalance,
@@ -1667,6 +1761,7 @@ function ProductEditorContent({
   creating: boolean;
   updating: boolean;
   productId?: string | number;
+  shopId?: string | number;
   boostEnabled: boolean;
   boostStatus: string;
   boostBalance: string;
@@ -1719,7 +1814,7 @@ function ProductEditorContent({
       <section className="wb-section" data-section="pricing">
         <h2>Цена и наличие</h2>
         <p className="wb-section-hint">Цена, остаток и артикул товара</p>
-        <StepPricing />
+        <StepPricing shopId={shopId} />
       </section>
     </ProductEditorShell>
   );

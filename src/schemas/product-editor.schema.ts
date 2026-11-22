@@ -52,7 +52,30 @@ export const VariationSchema = z.object({
   price: z.number().min(0),
   sale_price: z.number().min(0).optional().nullable(),
   quantity: z.number().int().min(0),
-  attributes: z.record(z.string()).optional(),
+  stock_status: z.enum(['known', 'unknown', 'out_of_stock']).default('unknown'),
+  attributes: z.record(z.string(), z.string()).optional(),
+});
+
+export const VariationAxisSchema = z.object({
+  attribute: z.any().optional(),
+  value: z.preprocess((val: unknown) => (Array.isArray(val) ? val : []), z.array(z.any())),
+});
+
+export const VariationOptionSchema = z.object({
+  id: z.union([z.string(), z.number()]).optional(),
+  title: z.string().min(1),
+  sku: z.string().default(''),
+  price: z.number().min(0),
+  sale_price: z.preprocess(
+    (value: unknown) => (value === '' || (typeof value === 'number' && Number.isNaN(value)) ? null : value),
+    z.number().min(0).optional().nullable()
+  ),
+  quantity: z.number().int().min(0),
+  stock_status: z.enum(['known', 'unknown', 'out_of_stock']).default('unknown'),
+  is_disable: z.boolean().default(true),
+  is_digital: z.boolean().optional().default(false),
+  image: z.any().optional().nullable(),
+  options: z.array(z.any()).min(1),
 });
 
 // Функция для нормализации массивов
@@ -85,7 +108,7 @@ export const ProductEditorSchema = z.object({
   group_variants: z.preprocess((val: unknown) => normalizeArray(val, []), z.array(z.object({
     id: z.string().optional(),
     name: z.string().optional(),
-    attributes: z.record(z.string()),
+    attributes: z.record(z.string(), z.string()),
     price: z.number().min(0),
     sale_price: z.number().min(0).optional().nullable(),
     quantity: z.number().int().min(0),
@@ -110,6 +133,7 @@ export const ProductEditorSchema = z.object({
   grouping_attributes: z.preprocess((val: unknown) => normalizeArray<number>(val, []), z.array(z.number())).optional(),
 
   // Шаг 4: Цена и наличие
+  product_type: z.enum(['simple', 'variable']).default('simple'),
   price: z.number().min(0, 'Цена должна быть положительной').optional(),
   sale_price: z.number().min(0).optional().nullable(),
   quantity: z.number().int().min(0, 'Количество не может быть отрицательным').optional(),
@@ -169,7 +193,8 @@ export const ProductEditorSchema = z.object({
 
   // Дополнительные поля
   status: z.enum(['draft', 'publish', 'under_review', 'approved', 'rejected', 'unpublish']).default('draft'),
-  variations: z.preprocess((val: unknown) => normalizeArray(val, []), z.array(VariationSchema)),
+  variations: z.preprocess((val: unknown) => normalizeArray(val, []), z.array(VariationAxisSchema)),
+  variation_options: z.preprocess((val: unknown) => normalizeArray(val, []), z.array(VariationOptionSchema)),
 });
 
 export type ProductEditorFormData = z.infer<typeof ProductEditorSchema>;

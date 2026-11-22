@@ -21,7 +21,7 @@ import { API_ENDPOINTS } from '@/data/client/api-endpoints';
 import { useShopQuery } from '@/data/shop';
 import { useMeQuery } from '@/data/user';
 import { productClient } from '@/data/client/product';
-import { SortOrder } from '@/types';
+import { ProductStatus, SortOrder } from '@/types';
 import {
   adminOnly,
   adminOwnerAndStaffOnly,
@@ -34,6 +34,7 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useQueryClient } from 'react-query';
+import CategorySelectModal from '@/components/product/editor/components/CategorySelectModal';
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -65,6 +66,10 @@ export default function ProductsPage() {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [isUngrouping, setIsUngrouping] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdatingCategory, setIsUpdatingCategory] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [selectedBulkCategoryId, setSelectedBulkCategoryId] = useState<number>();
   
   // Получаем group_key из query параметров для фильтрации
   useEffect(() => {
@@ -269,6 +274,98 @@ export default function ProductsPage() {
     }
   };
 
+  const handleBulkCategory = async (categoryId: number) => {
+    if (!shopId || selectedProducts.length === 0 || isUpdatingCategory) return;
+
+    const currentShopProductIds = new Set(
+      (products || [])
+        .filter((product: any) => Number(product.shop_id) === Number(shopId))
+        .map((product: any) => String(product.id))
+    );
+    const scopedProductIds = selectedProducts.filter((id) =>
+      currentShopProductIds.has(String(id))
+    );
+
+    if (scopedProductIds.length !== selectedProducts.length) {
+      toast.error('Список товаров изменился. Обновите страницу и выберите товары заново.');
+      setSelectedProducts([]);
+      return;
+    }
+
+    setIsUpdatingCategory(true);
+    try {
+      const response = await productClient.bulkAssignCategory({
+        product_ids: scopedProductIds,
+        category_id: categoryId,
+        shop_id: Number(shopId),
+      });
+      toast.success(response?.message || `Категория назначена товарам: ${scopedProductIds.length}`);
+      setSelectedProducts([]);
+      setSelectedBulkCategoryId(undefined);
+      await queryClient.invalidateQueries(API_ENDPOINTS.PRODUCTS);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Не удалось назначить категорию выбранным товарам');
+    } finally {
+      setIsUpdatingCategory(false);
+    }
+  };
+
+  const handleUpdateProductName = async (productId: string, name: string) => {
+    const product = (products || []).find(
+      (item: any) => String(item.id) === String(productId)
+    );
+
+    if (!product || Number(product.shop_id) !== Number(shopId)) {
+      toast.error('Товар не найден в текущем магазине. Обновите страницу.');
+      return false;
+    }
+
+    try {
+      await productClient.updateName(productId, name);
+      toast.success('Название товара сохранено');
+      await queryClient.invalidateQueries(API_ENDPOINTS.PRODUCTS);
+      return true;
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Не удалось изменить название товара');
+      return false;
+    }
+  };
+
+  const handleBulkStatus = async (nextStatus: ProductStatus) => {
+    if (!shopId || selectedProducts.length === 0 || isUpdatingStatus) return;
+
+    const currentShopProductIds = new Set(
+      (products || [])
+        .filter((product: any) => Number(product.shop_id) === Number(shopId))
+        .map((product: any) => String(product.id))
+    );
+    const scopedProductIds = selectedProducts.filter((id) =>
+      currentShopProductIds.has(String(id))
+    );
+
+    if (scopedProductIds.length !== selectedProducts.length) {
+      toast.error('Список товаров изменился. Обновите страницу и выберите товары заново.');
+      setSelectedProducts([]);
+      return;
+    }
+
+    setIsUpdatingStatus(true);
+    try {
+      const response = await productClient.bulkUpdateStatus({
+        product_ids: scopedProductIds,
+        status: nextStatus as 'publish' | 'draft' | 'unpublish',
+        shop_id: Number(shopId),
+      });
+      toast.success(response?.message || `Статус изменён у товаров: ${scopedProductIds.length}`);
+      setSelectedProducts([]);
+      await queryClient.invalidateQueries(API_ENDPOINTS.PRODUCTS);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Не удалось изменить статус выбранных товаров');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
   if (
     !hasAccess(adminOnly, permissions) &&
     !me?.shops?.map((shop) => shop.id).includes(shopId) &&
@@ -424,6 +521,18 @@ export default function ProductsPage() {
         canEditGroup={canEditGroup()}
         onBulkDelete={handleBulkDelete}
         isDeleting={isDeleting}
+        onBulkCategory={() => setIsCategoryModalOpen(true)}
+        isUpdatingCategory={isUpdatingCategory}
+        onUpdateName={handleUpdateProductName}
+        onBulkStatus={handleBulkStatus}
+        isUpdatingStatus={isUpdatingStatus}
+      />
+      <CategorySelectModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        onSelect={setSelectedBulkCategoryId}
+        onConfirm={handleBulkCategory}
+        selectedCategoryId={selectedBulkCategoryId}
       />
     </>
   );

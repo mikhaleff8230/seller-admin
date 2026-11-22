@@ -675,6 +675,13 @@ export interface Product {
   unit?: string;
   external_product_url?: string;
   external_product_button_text?: string;
+  preview_url?: string | null;
+  source_platform?: 'ozon' | 'wildberries' | string | null;
+  source_product_id?: string | null;
+  source_price?: number | null;
+  source_markup_percent?: number | null;
+  source_additional_costs?: number | null;
+  source_attributes?: Record<string, string>;
   created_at: string;
   updated_at: string;
   ratings: number;

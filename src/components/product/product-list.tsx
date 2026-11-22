@@ -10,6 +10,7 @@ import {
   Product,
   MappedPaginatorInfo,
   ProductType,
+  ProductStatus,
   Shop,
   SortOrder,
 } from '@/types';
@@ -30,7 +31,12 @@ export type IProps = {
   onSort: (current: any) => void;
   onOrder: (current: string) => void;
   onBulkDelete?: (productIds: string[]) => void;
+  onBulkCategory?: () => void;
+  onUpdateName?: (productId: string, name: string) => Promise<boolean>;
+  onBulkStatus?: (status: ProductStatus) => void;
   isDeleting?: boolean;
+  isUpdatingCategory?: boolean;
+  isUpdatingStatus?: boolean;
   selectedProducts?: string[];
   onSelectedProductsChange?: (products: string[]) => void;
   onUngroup?: () => void;
@@ -45,6 +51,13 @@ type SortingObjType = {
   column: string | null;
 };
 
+type ThumbnailPreview = {
+  src: string;
+  name: string;
+  left: number;
+  top: number;
+};
+
 const ProductList = ({
   products,
   paginatorInfo,
@@ -52,7 +65,12 @@ const ProductList = ({
   onSort,
   onOrder,
   onBulkDelete,
+  onBulkCategory,
+  onUpdateName,
+  onBulkStatus,
   isDeleting = false,
+  isUpdatingCategory = false,
+  isUpdatingStatus = false,
   selectedProducts: externalSelectedProducts,
   onSelectedProductsChange,
   onUngroup,
@@ -76,6 +94,64 @@ const ProductList = ({
   const selectedProducts = externalSelectedProducts !== undefined ? externalSelectedProducts : internalSelectedProducts;
   const setSelectedProducts = onSelectedProductsChange || setInternalSelectedProducts;
   const [selectAll, setSelectAll] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editingProductName, setEditingProductName] = useState('');
+  const [savingProductId, setSavingProductId] = useState<string | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<ThumbnailPreview | null>(null);
+
+  const showThumbnailPreview = (
+    event: React.MouseEvent<HTMLDivElement>,
+    src: string,
+    name: string
+  ) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const previewWidth = 320;
+    const previewHeight = 360;
+    const gap = 12;
+    const viewportPadding = 12;
+    const fitsOnRight = rect.right + gap + previewWidth <= window.innerWidth - viewportPadding;
+    const left = fitsOnRight
+      ? rect.right + gap
+      : Math.max(viewportPadding, rect.left - gap - previewWidth);
+    const preferredTop = rect.top + rect.height / 2 - previewHeight / 2;
+    const top = Math.min(
+      Math.max(viewportPadding, preferredTop),
+      Math.max(viewportPadding, window.innerHeight - previewHeight - viewportPadding)
+    );
+
+    setThumbnailPreview({ src, name, left, top });
+  };
+
+  const startEditingName = (product: Product) => {
+    if (!onUpdateName || savingProductId) return;
+    setEditingProductId(product.id);
+    setEditingProductName(product.name || '');
+  };
+
+  const cancelEditingName = () => {
+    if (savingProductId) return;
+    setEditingProductId(null);
+    setEditingProductName('');
+  };
+
+  const saveProductName = async (product: Product) => {
+    if (!onUpdateName || savingProductId) return;
+
+    const nextName = editingProductName.trim();
+    if (!nextName || nextName === product.name) {
+      cancelEditingName();
+      return;
+    }
+
+    setSavingProductId(product.id);
+    const saved = await onUpdateName(product.id, nextName);
+    setSavingProductId(null);
+
+    if (saved) {
+      setEditingProductId(null);
+      setEditingProductName('');
+    }
+  };
 
   // Функции для работы с выбранными товарами
   const handleSelectAll = (checked: boolean) => {
@@ -181,10 +257,15 @@ const ProductList = ({
         console.log(`ProductList [${id}] image is null/undefined:`, image === null || image === undefined);
         
         const imageSrc = image?.thumbnail || image?.original || siteSettings.product.placeholder;
+        const previewSrc = image?.original || image?.thumbnail || siteSettings.product.placeholder;
         console.log(`ProductList [${id}] final image src:`, imageSrc);
         
         return (
-          <div className="relative flex h-[42px] w-[42px] items-center">
+          <div
+            className="relative flex h-[42px] w-[42px] cursor-zoom-in items-center"
+            onMouseEnter={(event) => showThumbnailPreview(event, previewSrc, name)}
+            onMouseLeave={() => setThumbnailPreview(null)}
+          >
             <Image
               src={imageSrc}
               alt={name}
@@ -219,10 +300,46 @@ const ProductList = ({
       render: (name: string, record: Product) => {
         const productData = record as any;
         const hasGroupKey = !!productData?.group_key;
+        const isEditing = editingProductId === record.id;
+        const isSaving = savingProductId === record.id;
         
         return (
           <div className="flex items-center gap-2">
-            <span className="truncate" title={name}>{name}</span>
+            {isEditing ? (
+              <input
+                autoFocus
+                value={editingProductName}
+                maxLength={255}
+                disabled={isSaving}
+                onClick={(event) => event.stopPropagation()}
+                onChange={(event) => setEditingProductName(event.target.value)}
+                onBlur={cancelEditingName}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    void saveProductName(record);
+                  }
+                  if (event.key === 'Escape') {
+                    event.preventDefault();
+                    cancelEditingName();
+                  }
+                }}
+                className="h-9 w-full min-w-[180px] rounded border border-accent bg-white px-3 text-sm text-heading outline-none ring-1 ring-accent disabled:cursor-wait disabled:opacity-70"
+                aria-label={`Название товара ${name}`}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  startEditingName(record);
+                }}
+                className="min-w-0 truncate text-left hover:text-accent hover:underline focus:outline-none focus:ring-2 focus:ring-accent"
+                title="Нажмите, чтобы изменить название"
+              >
+                {name}
+              </button>
+            )}
             {hasGroupKey && (
               <Badge
                 text="Группа"
@@ -428,6 +545,26 @@ const ProductList = ({
 
   return (
     <>
+      {thumbnailPreview && (
+        <div
+          className="pointer-events-none fixed z-[100] w-80 overflow-hidden rounded-xl border border-gray-200 bg-white p-2 shadow-2xl"
+          style={{ left: thumbnailPreview.left, top: thumbnailPreview.top }}
+          role="presentation"
+        >
+          <div className="relative h-80 w-full overflow-hidden rounded-lg bg-gray-50">
+            <Image
+              src={thumbnailPreview.src}
+              alt={thumbnailPreview.name}
+              fill
+              sizes="320px"
+              className="object-contain"
+            />
+          </div>
+          <p className="truncate px-1 pt-2 text-sm text-heading">
+            {thumbnailPreview.name}
+          </p>
+        </div>
+      )}
       {/* Панель массовых операций */}
       {selectedProducts.length > 0 && (
         <div className="mb-4 flex items-center justify-between rounded-lg bg-gray-50 p-4">
@@ -446,7 +583,7 @@ const ProductList = ({
                 variant="outline"
                 size="small"
                 className="text-blue-600 hover:bg-blue-50"
-                disabled={isDeleting || isUngrouping}
+                disabled={isDeleting || isUngrouping || isUpdatingCategory}
               >
                 ✏️ Редактировать группу
               </Button>
@@ -457,17 +594,48 @@ const ProductList = ({
                 variant="outline"
                 size="small"
                 className="text-orange-600 hover:bg-orange-50"
-                disabled={isDeleting || isUngrouping}
+                disabled={isDeleting || isUngrouping || isUpdatingCategory}
               >
                 {isUngrouping ? 'Разгруппировка...' : '🔓 Разгруппировать'}
               </Button>
+            )}
+            {onBulkCategory && (
+              <Button
+                onClick={onBulkCategory}
+                variant="outline"
+                size="small"
+                className="text-blue-600 hover:bg-blue-50"
+                disabled={isDeleting || isUngrouping || isUpdatingCategory}
+              >
+                {isUpdatingCategory ? 'Назначение категории...' : 'Выбрать категорию'}
+              </Button>
+            )}
+            {onBulkStatus && (
+              <select
+                value=""
+                onChange={(event) => {
+                  if (event.target.value) {
+                    onBulkStatus(event.target.value as ProductStatus);
+                  }
+                }}
+                disabled={isDeleting || isUngrouping || isUpdatingCategory || isUpdatingStatus}
+                className="h-9 rounded border border-gray-300 bg-white px-3 text-sm text-heading hover:border-accent focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:cursor-wait disabled:opacity-60"
+                aria-label="Сменить статус выбранных товаров"
+              >
+                <option value="">
+                  {isUpdatingStatus ? 'Изменение статуса...' : 'Сменить статус'}
+                </option>
+                <option value={ProductStatus.Publish}>Опубликовано</option>
+                <option value={ProductStatus.Draft}>Черновик</option>
+                <option value={ProductStatus.UnPublish}>Архивировать</option>
+              </select>
             )}
             <Button
               onClick={handleBulkDelete}
               variant="outline"
               size="small"
               className="text-red-600 hover:bg-red-50"
-              disabled={isDeleting || isUngrouping}
+              disabled={isDeleting || isUngrouping || isUpdatingCategory || isUpdatingStatus}
             >
               <TrashIcon className="h-4 w-4 mr-1" />
               {isDeleting ? t('common:text-deleting') : t('common:text-delete-selected')}
@@ -484,7 +652,7 @@ const ProductList = ({
               }}
               variant="outline"
               size="small"
-              disabled={isDeleting || isUngrouping}
+              disabled={isDeleting || isUngrouping || isUpdatingCategory || isUpdatingStatus}
             >
               {t('common:text-cancel')}
             </Button>

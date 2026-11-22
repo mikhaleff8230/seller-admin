@@ -138,4 +138,29 @@ export const productClient = {
     });
     return HttpClient.post<any>('products/wizard/ungroup', data);
   },
+  bulkAssignCategory: (data: {
+    product_ids: Array<string | number>;
+    category_id: number;
+    shop_id: number;
+  }) => {
+    return HttpClient.post<{
+      message: string;
+      updated_count: number;
+      category_id: number;
+    }>('products/bulk-category', data);
+  },
+  updateName: (productId: string | number, name: string) => {
+    return HttpClient.patch<Product>(`products/${productId}/name`, { name });
+  },
+  bulkUpdateStatus: (data: {
+    product_ids: Array<string | number>;
+    status: 'publish' | 'draft' | 'unpublish';
+    shop_id: number;
+  }) => {
+    return HttpClient.post<{
+      message: string;
+      updated_count: number;
+      status: string;
+    }>('products/bulk-status', data);
+  },
 };

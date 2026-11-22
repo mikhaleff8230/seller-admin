@@ -23,6 +23,8 @@ export default function StepAttributes() {
   const groupingAttributes = watch('grouping_attributes') || [];
 
   const [attributes, setAttributes] = useState<Attribute[]>([]);
+  const sourceAttributes = ((product as any)?.source_attributes || {}) as Record<string, string>;
+  const sourceMarketplace = (product as any)?.source_platform === 'wildberries' ? 'Wildberries' : 'Ozon';
 
   // Убеждаемся, что categoryIds всегда массив
   const categoryIdsArray = Array.isArray(categoryIds) ? categoryIds : [];
@@ -74,6 +76,20 @@ export default function StepAttributes() {
             : 'Выберите категорию, чтобы загрузить доступные характеристики.'}
         </p>
       </div>
+
+      {Object.keys(sourceAttributes).length > 0 && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <h3 className="mb-3 font-semibold text-blue-950">Характеристики из {sourceMarketplace}</h3>
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm md:grid-cols-2">
+            {Object.entries(sourceAttributes).map(([name, value]) => (
+              <div key={name} className="flex justify-between gap-3 border-b border-blue-100 py-1">
+                <dt className="text-gray-600">{name}</dt><dd className="text-right font-medium">{String(value)}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-3 text-xs text-gray-500">Это исходные данные. Для каталога SANCAN заполните поля категории ниже.</p>
+        </div>
+      )}
 
       {categoryIdsArray.length === 0 ? (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
