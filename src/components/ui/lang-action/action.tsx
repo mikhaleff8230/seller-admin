@@ -95,8 +95,8 @@ export default function LanguageSwitcher({
                   // Не передаем slug - API сам сгенерирует новый с 12-значным кодом из названия
                   // Это гарантирует уникальность и правильный формат без "-kopia"
                   language: currentLanguage, // Передаем язык, чтобы товар создался с правильным языком
-                  type_id: record?.type?.id,
-                  shop_id: record?.shop_id,
+                  type_id: (record as any)?.type_id ?? record?.type?.id,
+                  shop_id: record?.shop_id ?? record?.shop?.id,
                   unit: record?.unit || 'pcs',
                   price: record?.price || 0,
                   status: 'draft',
